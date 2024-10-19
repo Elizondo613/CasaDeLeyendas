@@ -135,6 +135,7 @@ export default function Sala({ usuario }) {
       
       const tipoReto = decodedText.includes('/trivia') ? 'trivia' : 
                        decodedText.includes('/riddle') ? 'riddle' :
+                       decodedText.includes('/mimica') ? 'mimica' :
                        decodedText.includes('/image') ? 'image' :
                        decodedText.includes('/reto') ? 'reto' : null;
                        
@@ -146,7 +147,7 @@ export default function Sala({ usuario }) {
       const retoData = response.data;
       
       const salaRef = doc(db, 'salas', codigoSala);
-      const tiempoFinReto = new Date(Date.now() + (tipoReto === 'image' || tipoReto === 'reto' ? 10000 : 60000));
+      const tiempoFinReto = new Date(Date.now() + (tipoReto === 'image' || tipoReto === 'reto' || tipoReto === 'mimica' ? 10000 : 60000));
       
       await updateDoc(salaRef, {
         estadoJuego: 'jugando',
@@ -163,6 +164,8 @@ export default function Sala({ usuario }) {
         setImagenReto(retoData.url);
         setRetoTexto(retoData.description);
       } else if (tipoReto === 'reto') {
+        setRetoTexto(retoData.text);
+      } else if (tipoReto === 'mimica') {
         setRetoTexto(retoData.text);
       }
     } catch (error) {
@@ -379,7 +382,29 @@ export default function Sala({ usuario }) {
             </div>
           );
         }
-      
+
+        case 'mimica':
+          if (esJugadorActual) {
+            return (
+              <div className="bg-white p-4 rounded-lg shadow text-center">
+                <h2 className="font-bold text-xl mb-4">Mimica</h2>
+                <p className="text-lg mb-4">{retoTexto}</p>
+                <p className="text-sm text-gray-600">
+                  Realiza la mímica!
+                </p>
+              </div>
+            );
+          } else {
+            return (
+              <div className="bg-white p-4 rounded-lg shadow text-center">
+                <h2 className="font-bold text-xl mb-4">Reto en Progreso</h2>
+                <p className="text-lg mb-4">
+                  Debes adivinar la mímica!
+                </p>
+              </div>
+            );
+          }
+
       default:
         return null;
     }

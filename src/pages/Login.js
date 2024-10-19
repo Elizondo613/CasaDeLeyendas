@@ -37,6 +37,11 @@ const Login = () => {
     }
   };
 
+  const toggleAuthMode = () => {
+    setIsLogin(!isLogin);
+    setError(null);
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-yellow-700">
       <div 
@@ -50,7 +55,9 @@ const Login = () => {
           alignItems: "center"
         }}
       >
-        <h2 className="text-3xl font-bold text-center text-pink-600 mb-6">Iniciar sesión</h2>
+        <h2 className="text-3xl font-bold text-center text-pink-600 mb-6">
+          {isLogin ? "Iniciar sesión" : "Registrarse"}
+        </h2>
         {error && <p className="p-2 text-red-600 bg-red-100 rounded mb-4">{error}</p>}
         <form onSubmit={handleAuth} className="space-y-4 w-3/4">
           <input
@@ -73,9 +80,18 @@ const Login = () => {
             type="submit"
             className="w-full py-3 font-semibold text-white bg-yellow-600 rounded hover:bg-yellow-700 transition duration-200"
           >
-            Iniciar Partida
+            {isLogin ? "Iniciar Partida" : "Registrarse"}
           </button>
         </form>
+        <p className="mt-4 text-sm text-gray-600">
+          {isLogin ? "¿No tienes una cuenta?" : "¿Ya tienes una cuenta?"}
+          <button
+            onClick={toggleAuthMode}
+            className="ml-1 text-pink-600 hover:text-pink-800"
+          >
+            {isLogin ? "Regístrate" : "Inicia sesión"}
+          </button>
+        </p>
       </div>
     </div>
   );
