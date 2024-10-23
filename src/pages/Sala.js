@@ -230,9 +230,9 @@ export default function Sala({ usuario }) {
       {salaData.jugadores?.map((jugador, index) => (
         <li 
           key={jugador}
-          className={`flex items-center justify-between p-4 ${
+          className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 ${
             index % 2 === 0 ? 'bg-[#fff3e0]' : 'bg-[#ffe0b2]'
-          } rounded-lg`}
+          } rounded-lg space-y-4 sm:space-y-0`}
         >
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 flex items-center justify-center">
@@ -243,16 +243,16 @@ export default function Sala({ usuario }) {
               {jugador === salaData.anfitrion && ' (Anfitrión)'}
             </span>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="w-10 h-10 flex items-center justify-center">
+              <div key={i} className="w-8 sm:w-10 h-8 sm:h-10 flex items-center justify-center">
                 {i < (puntos[jugador] || 0) && (
-                  <img src={llaveImages[i]} alt={`Llave ${i + 1}`} className="w-8 h-8" />
+                  <img src={llaveImages[i]} alt={`Llave ${i + 1}`} className="w-6 sm:w-8 h-6 sm:h-8" />
                 )}
               </div>
             ))}
             {salaData.anfitrion === usuario.uid && (
-              <>
+              <div className="flex space-x-2">
                 <button 
                   onClick={() => actualizarPuntos(jugador, -1)}
                   className="bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-xl hover:bg-red-600"
@@ -265,7 +265,7 @@ export default function Sala({ usuario }) {
                 >
                   +
                 </button>
-              </>
+              </div>
             )}
           </div>
         </li>
@@ -370,73 +370,133 @@ export default function Sala({ usuario }) {
       //ADIVINA EL PERSONAJE
       case 'riddle':
         return esJugadorActual ? (
-          <div className="bg-white p-4 rounded-lg shadow text-center">
-            <h2 className="font-bold text-xl mb-4">¡Adivina el personaje!</h2>
-            <p className="text-lg mb-4">Los demás jugadores tienen la pista. ¡Intenta adivinar!</p>
+          <div className="w-full max-w-4xl mx-auto">
+            {/* Barra de tiempo con iconos */}
+            <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
+              <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
+              <span className="text-2xl font-bold">{tiempoRestante}s</span>
+              <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
+            </div>
+            
+            {/* Contenedor principal con fondo */}
+            <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+              {/* Fondo */}
+              <img 
+                src={fondoMimica} 
+                alt="Fondo" 
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+              
+              {/* Luna decorativa */}
+              <img 
+                src={lunaIcon} 
+                alt="Luna" 
+                className="absolute top-4 left-1/2 transform -translate-x-1/2 w-16 h-16"
+              />
+              
+              {/* Contenido centrado */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
+                <h2 className="text-3xl md:text-5xl font-bold text-white text-center mb-4">
+                  ¡Adivina el personaje!
+                </h2>
+                <p className="text-xl text-white text-center mt-4">
+                  Los demás jugadores tienen la pista. ¡Intenta adivinar!
+                </p>
+              </div>
+            </div>
           </div>
         ) : (
-          <div className="bg-white p-4 rounded-lg shadow text-center">
-            <h2 className="font-bold text-xl mb-4">Personaje a adivinar:</h2>
-            <p className="text-lg mb-4">{salaData.retoActual.text}</p>
-            <button
-              onClick={finalizarReto}
-              className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-            >
-              ¡El jugador ha acertado!
-            </button>
+          <div className="w-full max-w-4xl mx-auto">
+            {/* Barra de tiempo con iconos */}
+            <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
+              <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
+              <span className="text-2xl font-bold">{tiempoRestante}s</span>
+              <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
+            </div>
+            
+            {/* Contenedor principal con fondo */}
+            <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+              {/* Fondo */}
+              <img 
+                src={fondoMimica} 
+                alt="Fondo" 
+                className="absolute inset-0 w-full h-full object-contain"
+              />
+              
+              {/* Luna decorativa */}
+              <img 
+                src={lunaIcon} 
+                alt="Luna" 
+                className="absolute top-4 left-1/2 transform -translate-x-1/2 w-16 h-16"
+              />
+              
+              {/* Contenido centrado */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
+                <h2 className="text-3xl md:text-5xl font-bold text-white text-center mb-4">
+                  {salaData.retoActual.text}
+                </h2>
+                <button
+                  onClick={finalizarReto}
+                  className="mt-6 bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-lg text-xl font-semibold transition-colors"
+                >
+                  ¡El jugador ha acertado!
+                </button>
+              </div>
+            </div>
           </div>
         );
       
       //LEYENDAS
       case 'image':
         return (
-          <div className="w-full min-h-screen bg-[#FFF8E7]">
-            {/* Contenedor principal */}
-            <div className="w-full max-w-5xl mx-auto px-4 py-4 space-y-4">
-              {/* Logo superior centrado */}
-              <div className="flex justify-center mb-4">
+          <div className="w-full max-w-4xl mx-auto">
+            {/* Barra de tiempo con iconos */}
+            <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
+              <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
+              <span className="text-2xl font-bold">{tiempoRestante}</span>
+              <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
+            </div>
+            
+            {/* Contenedor principal con fondo - Aumentado el padding bottom para más espacio */}
+            <div className="relative w-full pb-[75%]">
+              {/* Fondo */}
+              <img 
+                src={fondoImage} 
+                alt="Fondo" 
+                className="absolute inset-0 w-full h-full object-contain rounded-lg"
+              />
+              
+              {/* Contenedor del contenido - Ajustado el padding y centrado */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+                {/* Logo superior */}
                 <img 
                   src={logoLeyendas} 
                   alt="Logo Leyendas" 
-                  className="w-16 h-16 md:w-20 md:h-20"
-                />
-              </div>
-
-              {/* Card principal con marco y fondo */}
-              <div className="relative w-full aspect-[16/9] rounded-xl overflow-hidden">
-                {/* Fondo decorativo */}
-                <img 
-                  src={fondoImage} 
-                  alt="Fondo" 
-                  className="absolute inset-0 w-full h-full object-contain"
+                  className="w-12 h-12 mb-6"
                 />
                 
-                {/* Contenido centrado con scroll si es necesario */}
-                <div className="relative z-10 w-full h-full flex flex-col items-center justify-center p-4 md:p-8">
-                  <div className="w-full max-h-full overflow-y-auto flex flex-col items-center">
-                    {/* Contenedor de la imagen con tamaño máximo controlado */}
-                    {imagenReto && (
-                      <div className="w-full max-w-md mx-auto mb-4">
-                        <img 
-                          src={imagenReto} 
-                          alt="Reto" 
-                          className="w-full h-auto rounded-lg shadow-md"
-                        />
-                      </div>
-                    )}
-                    
-                    {/* Texto del reto con tamaño controlado */}
-                    {retoTexto && (
-                      <div className="text-center mt-2 px-4">
-                        <h2 className="text-lg md:text-2xl font-bold text-white mb-2">
-                          {retoTexto}
-                        </h2>
-                        <p className="text-sm md:text-base text-white/80">
-                          La imagen se mostrará por unos segundos...
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                {/* Contenedor para imagen y texto - Reducido el tamaño máximo */}
+                <div className="flex flex-col items-center w-full max-w-sm">
+                  {imagenReto && (
+                    <div className="w-full max-w-xs mb-6">
+                      <img 
+                        src={imagenReto} 
+                        alt="Reto" 
+                        className="w-full h-auto rounded-lg shadow-lg"
+                      />
+                    </div>
+                  )}
+                  
+                  {retoTexto && (
+                    <div className="text-center mt-4 px-6">
+                      <h2 className="text-xl font-bold text-white mb-3">
+                        {retoTexto}
+                      </h2>
+                      <p className="text-sm text-white/80">
+                        La imagen se mostrará por unos segundos...
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
