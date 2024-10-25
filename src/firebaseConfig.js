@@ -6,13 +6,13 @@ import { getAuth } from "firebase/auth";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyA71z_ID0sh_DUlsWQYyIAwBxE8VCGvTy4",
-  authDomain: "juego-legend.firebaseapp.com",
-  projectId: "juego-legend",
-  storageBucket: "juego-legend.appspot.com",
-  messagingSenderId: "20712709003",
-  appId: "1:20712709003:web:96f832b2bd44109ccc2d8e",
-  measurementId: "G-0LP7TR8QE8"
+  apiKey: "AIzaSyAByFrKOgyqfK2qEbQCzDDn0Ja__Vuhobk",
+  authDomain: "project-test-game.firebaseapp.com",
+  projectId: "project-test-game",
+  storageBucket: "project-test-game.appspot.com",
+  messagingSenderId: "748865890277",
+  appId: "1:748865890277:web:ace3e0e8ce796e18dd710c",
+  measurementId: "G-2Q3KGG5BN4"
 };
 
 // Initialize Firebase

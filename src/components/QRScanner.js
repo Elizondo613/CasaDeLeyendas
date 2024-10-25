@@ -3,7 +3,7 @@ import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 
 const QrScanner = ({ onScanSuccess, onScanFailure }) => {
   const [scanner, setScanner] = useState(null);
-  const [method, setMethod] = useState(null); // Estado para el método de escaneo
+  const [method, setMethod] = useState(null);
 
   const handleScanSuccess = (decodedText, decodedResult) => {
     console.log('Escaneado con éxito:', decodedText);
@@ -51,13 +51,34 @@ const QrScanner = ({ onScanSuccess, onScanFailure }) => {
   };
 
   return (
-    <div>
-      <div>
-        <button onClick={() => setMethod('camera')} className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 mb-4"
-          >Escanear QR</button>
+    <div className="min-h-screen bg-[#B8860B] p-4">
+      <div className="max-w-md mx-auto">
+        <button 
+          onClick={() => setMethod('camera')} 
+          className="w-full bg-[#1e3333] text-white py-3 px-6 rounded-lg hover:opacity-90 transition-opacity duration-200 mb-6 font-medium"
+        >
+          Escanear QR
+        </button>
+        
+        {method === 'camera' && (
+          <div 
+            id="qr-reader" 
+            className="bg-white rounded-lg p-4 shadow-lg"
+            style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}
+          ></div>
+        )}
+        
+        {method === 'file' && (
+          <div className="bg-white rounded-lg p-4 shadow-lg">
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleFileUpload}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+        )}
       </div>
-      {method === 'camera' && <div id="qr-reader" style={{ width: '300px' }}></div>}
-      {method === 'file' && <input type="file" accept="image/*" onChange={handleFileUpload} />}
     </div>
   );
 };

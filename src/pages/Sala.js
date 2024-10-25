@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import QrScanner from '../components/QRScanner';
@@ -24,6 +24,9 @@ import logoLeyendas from '../assets/logoLeyendas.png';
 import fondoImage from '../assets/fondoImage.png';
 import fondoTrivia from '../assets/fondoTrivia.png';
 import candelaIcon from '../assets/candelaIcon.png';
+import facebookIcon from '../assets/facebookIcon.png';
+import instagramIcon from '../assets/instagramIcon.png';
+import tiktokIcon from '../assets/tiktokIcon.png';
 
 //api
 const API_BASE_URL = 'https://api-casal.onrender.com/api';
@@ -55,6 +58,50 @@ export default function Sala({ usuario }) {
     setTiempoRestante(null);
   }, [temporizadorID]);
 
+  // Salir de la sala
+  const handleSalirSala = async () => {
+    try {
+      if (salaData) {
+        const salaRef = doc(db, 'salas', codigoSala);
+        
+        // Si es el anfitrión, eliminar la sala completa
+        if (salaData.anfitrion === usuario.uid) {
+          await updateDoc(salaRef, {
+            estadoJuego: 'finalizado',
+            jugadores: salaData.jugadores.filter(id => id !== usuario.uid)
+          });
+        } else {
+          // Si no es anfitrión, solo remover al jugador de la lista
+          await updateDoc(salaRef, {
+            jugadores: salaData.jugadores.filter(id => id !== usuario.uid)
+          });
+        }
+      }
+      
+      // Navegar de vuelta a la sala principal
+      navigate('/');
+    } catch (error) {
+      console.error('Error al salir de la sala:', error);
+      setError('Error al salir de la sala');
+    }
+  };
+
+  //Likes e iconos para reto de redes
+  const [likesNeeded] = useState(() => Math.floor(Math.random() * 5) + 1);
+
+  const getSocialIcon = (category) => {
+    switch (category.toLowerCase()) {
+      case 'Facebook':
+        return facebookIcon;
+      case 'Instagram':
+        return instagramIcon;
+      case 'Tiktok':
+        return tiktokIcon;
+      default:
+        return facebookIcon;
+    }
+  };
+
   //Define el reto como finalizado
   const finalizarReto = useCallback(async () => {
     limpiarTemporizador();
@@ -81,11 +128,9 @@ export default function Sala({ usuario }) {
         const data = { id: doc.id, ...doc.data() };
         setSalaData(data);
         
-        // Actualizar los puntos desde Firestore
         if (data.puntos) {
           setPuntos(data.puntos);
         } else {
-          // Inicializar puntos para nuevos jugadores si no existen
           const puntosIniciales = {};
           data.jugadores.forEach((jugador) => {
             if (!(jugador in puntos)) {
@@ -95,17 +140,16 @@ export default function Sala({ usuario }) {
           setPuntos(prevPuntos => ({ ...prevPuntos, ...puntosIniciales }));
         }
         
-        if (data.ultimaRespuesta) {
-          limpiarTemporizador();
-        } else if (data.tiempoFinReto) {
+        // Modificar esta condición para excluir explícitamente 'image' y 'retoRedes'
+        if (data.tiempoFinReto && !['image', 'retoRedes'].includes(data.tipoReto)) {
           const tiempoFin = data.tiempoFinReto.toDate();
           const actualizarTemporizador = () => {
             const ahora = new Date();
             const diferencia = Math.max(0, Math.floor((tiempoFin - ahora) / 1000));
+
+            setTiempoRestante(diferencia);
             
-            if (diferencia > 0) {
-              setTiempoRestante(diferencia);
-            } else {
+            if (diferencia <= 0) {
               limpiarTemporizador();
               if (data.estadoJuego === 'jugando') {
                 finalizarReto();
@@ -114,9 +158,9 @@ export default function Sala({ usuario }) {
           };
           
           if (!temporizadorID) {
+            actualizarTemporizador();
             const intervalo = setInterval(actualizarTemporizador, 1000);
             setTemporizadorID(intervalo);
-            actualizarTemporizador();
           }
         } else {
           limpiarTemporizador();
@@ -132,7 +176,7 @@ export default function Sala({ usuario }) {
       unsubscribe();
       limpiarTemporizador();
     };
-  }, [codigoSala, navigate, finalizarReto, limpiarTemporizador, temporizadorID, puntos]);
+}, [codigoSala, navigate, finalizarReto, limpiarTemporizador, temporizadorID, puntos]);
 
   const iniciarJuego = async () => {
     const salaRef = doc(db, 'salas', codigoSala);
@@ -150,17 +194,24 @@ export default function Sala({ usuario }) {
                        decodedText.includes('/riddle') ? 'riddle' :
                        decodedText.includes('/mimica') ? 'mimica' :
                        decodedText.includes('/image') ? 'image' :
+                       decodedText.includes('/retoRedes') ? 'retoRedes' :
                        decodedText.includes('/reto') ? 'reto' : null;
                        
       if (!tipoReto) {
         throw new Error('Código QR no válido para ningún tipo de reto');
       }
-
+  
       const response = await axios.get(`${API_BASE_URL}/challenge/${tipoReto}`);
       const retoData = response.data;
       
       const salaRef = doc(db, 'salas', codigoSala);
-      const tiempoFinReto = new Date(Date.now() + (tipoReto === 'image' || tipoReto === 'reto' || tipoReto === 'mimica' ? 10000 : 60000));
+      
+      // Modificar esta parte para asignar tiempo solo a los retos que lo necesitan
+      const tiempoFinReto = ['trivia', 'riddle', 'mimica'].includes(tipoReto)
+      ? Timestamp.fromDate(new Date(Date.now() + 60000))  // Usar Timestamp de Firestore
+      : tipoReto === 'reto'
+      ? Timestamp.fromDate(new Date(Date.now() + 10000))
+      : null;
       
       await updateDoc(salaRef, {
         estadoJuego: 'jugando',
@@ -172,13 +223,15 @@ export default function Sala({ usuario }) {
       });
       
       setMostrarScanner(false);
-
+  
       if (tipoReto === 'image') {
         setImagenReto(retoData.url);
         setRetoTexto(retoData.description);
       } else if (tipoReto === 'reto') {
         setRetoTexto(retoData.text);
       } else if (tipoReto === 'mimica') {
+        setRetoTexto(retoData.text);
+      } else if (tipoReto === 'retoRedes') {
         setRetoTexto(retoData.text);
       }
     } catch (error) {
@@ -298,30 +351,30 @@ export default function Sala({ usuario }) {
   
         return (
           <div className="w-full max-w-4xl mx-auto px-4">
-            {/* Contenedor principal con fondo de trivia */}
-            <div className="relative w-full aspect-[16/9]">
+            {/* Contenedor principal con fondo de trivia - Ajustado para móviles */}
+            <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px]">
               {/* Imagen de fondo */}
               <img 
                 src={fondoTrivia} 
                 alt="Marco Trivia" 
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 w-full h-full object-cover md:object-contain"
               />
               
               {/* Contenido superpuesto */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-8">
                 {/* Íconos superiores */}
-                <div className="flex justify-between w-full mb-6">
-                  <img src={candelaIcon} alt="Candela" className="w-8 h-8" />
-                  <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
+                <div className="flex justify-between w-full max-w-lg mb-4 md:mb-6">
+                  <img src={candelaIcon} alt="Candela" className="w-6 h-6 md:w-8 md:h-8" />
+                  <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
                 
                 {/* Pregunta */}
-                <h2 className="font-bold text-xl md:text-2xl lg:text-3xl mb-6 text-white text-center">
+                <h2 className="font-bold text-lg md:text-xl lg:text-2xl mb-4 md:mb-6 text-white text-center px-2 md:px-4">
                   {salaData.retoActual.question}
                 </h2>
                 
                 {/* Opciones */}
-                <div className="w-full max-w-lg space-y-3">
+                <div className="w-full max-w-lg space-y-2 md:space-y-3 px-4">
                   {salaData.retoActual.options.map((opcion, indice) => {
                     let estilo = 'bg-white/90 hover:bg-white';
                     
@@ -340,7 +393,7 @@ export default function Sala({ usuario }) {
                       <button
                         key={indice}
                         onClick={() => esJugadorActual && !mostrarResultado && manejarRespuestaTrivia(indice)}
-                        className={`w-full p-3 rounded-lg text-center font-semibold transition-colors ${estilo} ${
+                        className={`w-full p-2 md:p-3 rounded-lg text-center text-sm md:text-base font-semibold transition-colors ${estilo} ${
                           !esJugadorActual || mostrarResultado ? 'cursor-default' : 'cursor-pointer'
                         }`}
                         disabled={!esJugadorActual || mostrarResultado}
@@ -353,11 +406,11 @@ export default function Sala({ usuario }) {
   
                 {/* Resultado */}
                 {mostrarResultado && (
-                  <div className="mt-6 text-center">
-                    <p className="text-lg font-bold text-white mb-2">
+                  <div className="mt-4 md:mt-6 text-center">
+                    <p className="text-base md:text-lg font-bold text-white mb-2">
                       {ultimaRespuesta.correcta ? '¡Respuesta correcta!' : 'Respuesta incorrecta'}
                     </p>
-                    <p className="text-sm text-white/80">
+                    <p className="text-xs md:text-sm text-white/80">
                       Continuando en unos segundos...
                     </p>
                   </div>
@@ -370,74 +423,74 @@ export default function Sala({ usuario }) {
       //ADIVINA EL PERSONAJE
       case 'riddle':
         return esJugadorActual ? (
-          <div className="w-full max-w-4xl mx-auto">
+          <div className="w-full max-w-4xl mx-auto px-4">
             {/* Barra de tiempo con iconos */}
-            <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
-              <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
-              <span className="text-2xl font-bold">{tiempoRestante}s</span>
-              <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
+            <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
+              <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
+              <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+              <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
             {/* Contenedor principal con fondo */}
-            <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+            <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
               {/* Fondo */}
               <img 
                 src={fondoMimica} 
                 alt="Fondo" 
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 w-full h-full object-cover"
               />
               
               {/* Luna decorativa */}
               <img 
                 src={lunaIcon} 
                 alt="Luna" 
-                className="absolute top-4 left-1/2 transform -translate-x-1/2 w-16 h-16"
+                className="absolute top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 md:w-16 md:h-16"
               />
               
               {/* Contenido centrado */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-                <h2 className="text-3xl md:text-5xl font-bold text-white text-center mb-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-6 lg:p-8">
+                <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold text-white text-center mb-4">
                   ¡Adivina el personaje!
                 </h2>
-                <p className="text-xl text-white text-center mt-4">
+                <p className="text-base md:text-lg lg:text-xl text-white text-center mt-4 max-w-md mx-auto">
                   Los demás jugadores tienen la pista. ¡Intenta adivinar!
                 </p>
               </div>
             </div>
           </div>
         ) : (
-          <div className="w-full max-w-4xl mx-auto">
+          <div className="w-full max-w-4xl mx-auto px-4">
             {/* Barra de tiempo con iconos */}
-            <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
-              <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
-              <span className="text-2xl font-bold">{tiempoRestante}s</span>
-              <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
+            <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
+              <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
+              <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+              <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
             {/* Contenedor principal con fondo */}
-            <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+            <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
               {/* Fondo */}
               <img 
                 src={fondoMimica} 
                 alt="Fondo" 
-                className="absolute inset-0 w-full h-full object-contain"
+                className="absolute inset-0 w-full h-full object-cover"
               />
               
               {/* Luna decorativa */}
               <img 
                 src={lunaIcon} 
                 alt="Luna" 
-                className="absolute top-4 left-1/2 transform -translate-x-1/2 w-16 h-16"
+                className="absolute top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 md:w-16 md:h-16"
               />
               
               {/* Contenido centrado */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-                <h2 className="text-3xl md:text-5xl font-bold text-white text-center mb-4">
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-6 lg:p-8">
+                <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold text-white text-center mb-4">
                   {salaData.retoActual.text}
                 </h2>
                 <button
                   onClick={finalizarReto}
-                  className="mt-6 bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-lg text-xl font-semibold transition-colors"
+                  className="mt-6 bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 px-6 md:px-8 rounded-lg text-base md:text-xl font-semibold transition-colors"
                 >
                   ¡El jugador ha acertado!
                 </button>
@@ -453,17 +506,15 @@ export default function Sala({ usuario }) {
             {/* Barra de tiempo con iconos */}
             <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
               <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
-              <span className="text-2xl font-bold">{tiempoRestante}</span>
-              <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
             </div>
             
             {/* Contenedor principal con fondo - Aumentado el padding bottom para más espacio */}
-            <div className="relative w-full pb-[75%]">
+            <div className="relative w-full h-screen max-h-[800px] rounded-lg overflow-hidden">
               {/* Fondo */}
               <img 
                 src={fondoImage} 
                 alt="Fondo" 
-                className="absolute inset-0 w-full h-full object-contain rounded-lg"
+                className="absolute inset-0 w-full h-full object-cover"
               />
               
               {/* Contenedor del contenido - Ajustado el padding y centrado */}
@@ -492,9 +543,13 @@ export default function Sala({ usuario }) {
                       <h2 className="text-xl font-bold text-white mb-3">
                         {retoTexto}
                       </h2>
-                      <p className="text-sm text-white/80">
-                        La imagen se mostrará por unos segundos...
-                      </p>
+                        {/* Botón de avanzar */}
+                        <button
+                          onClick={finalizarReto}
+                          className="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-lg text-xl font-semibold transition-colors"
+                        >
+                          Avanzar
+                        </button>
                     </div>
                   )}
                 </div>
@@ -504,27 +559,82 @@ export default function Sala({ usuario }) {
         );
       
       //RETOS  
-      case 'reto':
+      case 'retoRedes':
         if (esJugadorActual) {
+          const socialIcon = getSocialIcon(salaData.retoActual.category);
+          
           return (
-            <div className="bg-white p-4 rounded-lg shadow text-center">
-              <h2 className="font-bold text-xl mb-4">Reto Especial</h2>
-              <p className="text-lg mb-4">{retoTexto}</p>
-              <p className="text-sm text-gray-600">
-                El reto se mostrará por unos segundos...
-              </p>
+            <div className="w-full max-w-4xl mx-auto px-4">
+              {/* Contenedor principal con aspect ratio ajustado */}
+              <div className="relative w-full h-screen max-h-[800px] rounded-lg overflow-hidden">
+                <img 
+                  src={fondoImage} 
+                  alt="Fondo" 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                
+                {/* Contenido centrado */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-6">
+                  {/* Logo de la app */}
+                  <img 
+                    src={logoLeyendas} 
+                    alt="Logo Leyendas" 
+                    className="w-16 h-16 mb-6"
+                  />
+                  
+                  {/* Ícono de red social */}
+                  <img 
+                    src={socialIcon} 
+                    alt="Red Social" 
+                    className="w-20 h-20 mb-6"
+                  />
+                  
+                  {/* Texto del reto */}
+                  <div className="bg-white/90 rounded-lg p-6 max-w-lg w-full mx-auto mb-6">
+                    <p className="text-xl md:text-2xl text-center font-bold">
+                      {retoTexto}
+                    </p>
+                  </div>
+                  
+                  {/* Mensaje de likes */}
+                  <div className="bg-blue-500 text-white rounded-lg px-6 py-3 mb-6">
+                    <p className="text-lg font-semibold text-center">
+                      Obtén {likesNeeded} reacciones
+                    </p>
+                  </div>
+                  
+                  {/* Botón de avanzar */}
+                  <button
+                    onClick={finalizarReto}
+                    className="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-lg text-xl font-semibold transition-colors"
+                  >
+                    Avanzar
+                  </button>
+                </div>
+              </div>
             </div>
           );
         } else {
           return (
-            <div className="bg-white p-4 rounded-lg shadow text-center">
-              <h2 className="font-bold text-xl mb-4">Reto en Progreso</h2>
-              <p className="text-lg mb-4">
-                El jugador actual está realizando un reto especial.
-              </p>
-              <p className="text-sm text-gray-600">
-                Espera unos momentos...
-              </p>
+            <div className="w-full max-w-4xl mx-auto px-4">
+              {/* Mantener el mismo header con tiempo */}
+              <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
+                <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8" />
+              </div>
+              
+              {/* Mensaje de espera */}
+              <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                <img 
+                  src={fondoMimica} 
+                  alt="Fondo" 
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <h2 className="text-2xl md:text-4xl font-bold text-white text-center px-6">
+                    ¡El jugador está realizando un reto en redes sociales!
+                  </h2>
+                </div>
+              </div>
             </div>
           );
         }
@@ -533,16 +643,16 @@ export default function Sala({ usuario }) {
         case 'mimica':
           if (esJugadorActual) {
             return (
-              <div className="w-full max-w-4xl mx-auto">
+              <div className="w-full max-w-4xl mx-auto px-4">
                 {/* Barra de tiempo */}
-                <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
-                  <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
-                  <span className="text-2xl font-bold">{tiempoRestante}</span>
-                  <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
+                <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
+                  <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
+                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+                  <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
                 {/* Contenedor de la mímica */}
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
                   {/* Fondo */}
                   <img 
                     src={fondoMimica} 
@@ -554,15 +664,15 @@ export default function Sala({ usuario }) {
                   <img 
                     src={lunaIcon} 
                     alt="Luna" 
-                    className="absolute top-4 left-1/2 transform -translate-x-1/2 w-16 h-16"
+                    className="absolute top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 md:w-16 md:h-16"
                   />
                   
                   {/* Texto de la mímica */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-                    <h2 className="text-3xl md:text-5xl font-bold text-white text-center mb-4">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-6 lg:p-8">
+                    <h2 className="text-xl md:text-3xl lg:text-5xl font-bold text-white text-center mb-4 max-w-2xl">
                       {retoTexto}
                     </h2>
-                    <p className="text-xl text-white text-center mt-4">
+                    <p className="text-base md:text-lg lg:text-xl text-white text-center mt-4">
                       ¡Realiza la mímica!
                     </p>
                   </div>
@@ -571,16 +681,16 @@ export default function Sala({ usuario }) {
             );
           } else {
             return (
-              <div className="w-full max-w-4xl mx-auto">
+              <div className="w-full max-w-4xl mx-auto px-4">
                 {/* Barra de tiempo */}
-                <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
-                  <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
-                  <span className="text-2xl font-bold">{tiempoRestante}s</span>
-                  <img src={logoLeyendas} alt="Logo Leyendas" className="w-8 h-8 ml-4" />
+                <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
+                  <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
+                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+                  <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
                 {/* Contenedor de la mímica */}
-                <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
                   <img 
                     src={fondoMimica} 
                     alt="Fondo" 
@@ -589,10 +699,10 @@ export default function Sala({ usuario }) {
                   <img 
                     src={lunaIcon} 
                     alt="Luna" 
-                    className="absolute top-4 left-1/2 transform -translate-x-1/2 w-16 h-16"
+                    className="absolute top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 md:w-16 md:h-16"
                   />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-                    <h2 className="text-3xl md:text-5xl font-bold text-white text-center">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-6 lg:p-8">
+                    <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold text-white text-center max-w-2xl">
                       ¡Adivina la mímica!
                     </h2>
                   </div>
@@ -629,6 +739,14 @@ export default function Sala({ usuario }) {
           >
             {/* Contenedor para el texto centrado */}
             <div className="absolute inset-0 flex items-center justify-between px-6">
+            <div className="absolute top-8 right-1/2 transform -translate-x-28 bg-white/20 px-3 py-1 rounded-lg backdrop-blur-sm">
+                <button
+                  onClick={handleSalirSala}
+                  className="absolute top-0 right-0 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  Salir
+                </button>
+              </div>
               <div className="flex-1 text-center">
                 <h1 className="text-3xl font-bold text-white">
                   SALA {codigoSala}
