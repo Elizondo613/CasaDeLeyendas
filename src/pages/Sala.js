@@ -432,19 +432,19 @@ export default function Sala({ usuario }) {
             </div>
             
             {/* Contenedor principal con fondo */}
-            <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
+            <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg">
               {/* Fondo */}
               <img 
                 src={fondoMimica} 
                 alt="Fondo" 
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-contain"
               />
               
               {/* Luna decorativa */}
               <img 
                 src={lunaIcon} 
                 alt="Luna" 
-                className="absolute top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 md:w-16 md:h-16"
+                className="relative top-4 left-1/2 transform -translate-x-1/2 w-12 h-12 md:w-16 md:h-16"
               />
               
               {/* Contenido centrado */}
@@ -468,12 +468,12 @@ export default function Sala({ usuario }) {
             </div>
             
             {/* Contenedor principal con fondo */}
-            <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
+            <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg">
               {/* Fondo */}
               <img 
                 src={fondoMimica} 
                 alt="Fondo" 
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-contain"
               />
               
               {/* Luna decorativa */}
@@ -509,12 +509,12 @@ export default function Sala({ usuario }) {
             </div>
             
             {/* Contenedor principal con fondo - Aumentado el padding bottom para más espacio */}
-            <div className="relative w-full h-screen max-h-[800px] rounded-lg overflow-hidden">
+            <div className="relative w-full h-screen max-h-[800px] rounded-lg">
               {/* Fondo */}
               <img 
                 src={fondoImage} 
                 alt="Fondo" 
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-contain"
               />
               
               {/* Contenedor del contenido - Ajustado el padding y centrado */}
@@ -566,11 +566,11 @@ export default function Sala({ usuario }) {
           return (
             <div className="w-full max-w-4xl mx-auto px-4">
               {/* Contenedor principal con aspect ratio ajustado */}
-              <div className="relative w-full h-screen max-h-[800px] rounded-lg overflow-hidden">
+              <div className="relative w-full h-screen max-h-[800px] rounded-lg">
                 <img 
                   src={fondoImage} 
                   alt="Fondo" 
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-contain"
                 />
                 
                 {/* Contenido centrado */}
@@ -623,11 +623,11 @@ export default function Sala({ usuario }) {
               </div>
               
               {/* Mensaje de espera */}
-              <div className="relative w-full aspect-[16/9] rounded-lg overflow-hidden">
+              <div className="relative w-full aspect-[16/9] rounded-lg">
                 <img 
                   src={fondoMimica} 
                   alt="Fondo" 
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-contain"
                 />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <h2 className="text-2xl md:text-4xl font-bold text-white text-center px-6">
@@ -652,12 +652,12 @@ export default function Sala({ usuario }) {
                 </div>
         
                 {/* Contenedor de la mímica */}
-                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
+                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg">
                   {/* Fondo */}
                   <img 
                     src={fondoMimica} 
                     alt="Fondo" 
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain"
                   />
                   
                   {/* Luna decorativa */}
@@ -690,11 +690,11 @@ export default function Sala({ usuario }) {
                 </div>
         
                 {/* Contenedor de la mímica */}
-                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg overflow-hidden">
+                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg">
                   <img 
                     src={fondoMimica} 
                     alt="Fondo" 
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-contain"
                   />
                   <img 
                     src={lunaIcon} 
@@ -731,7 +731,7 @@ export default function Sala({ usuario }) {
           <div 
             className="h-24 relative rounded-lg overflow-hidden"
             style={{
-              backgroundImage: `url(${marcoHeader})`, // Asumiendo que importaste la imagen como marcoHeader
+              backgroundImage: `url(${marcoHeader})`,
               backgroundSize: 'contain',
               backgroundPosition: 'center',
               backgroundRepeat: 'no-repeat'
@@ -772,12 +772,6 @@ export default function Sala({ usuario }) {
         <div className="bg-[#fff8e1] rounded-lg p-6 mb-6">
           {renderJugadores()}
         </div>
-
-        {tiempoRestante !== null && (
-          <div className="text-center text-3xl font-bold mb-6 text-white">
-            Tiempo: {tiempoRestante}s
-          </div>
-        )}
 
         {esAnfitrion && salaData.estadoJuego === 'esperando' && (
           <button 

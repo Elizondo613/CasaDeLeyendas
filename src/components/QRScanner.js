@@ -4,10 +4,19 @@ import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
 const QrScanner = ({ onScanSuccess, onScanFailure }) => {
   const [scanner, setScanner] = useState(null);
   const [method, setMethod] = useState(null);
+  const [lastScannedCode, setLastScannedCode] = useState(null); // Guardar último código QR
 
   const handleScanSuccess = (decodedText, decodedResult) => {
+    // Comprobar si el código QR ya fue escaneado recientemente
+    if (decodedText === lastScannedCode) return;
+
     console.log('Escaneado con éxito:', decodedText);
+    setLastScannedCode(decodedText); // Guardar el QR actual
+
     onScanSuccess(decodedText, decodedResult);
+
+    // Restablecer el último QR después de 3 segundos para permitir nuevos escaneos
+    setTimeout(() => setLastScannedCode(null), 3000);
   };
 
   const handleScanFailure = (error) => {
@@ -22,7 +31,7 @@ const QrScanner = ({ onScanSuccess, onScanFailure }) => {
     if (method === 'camera') {
       html5QrcodeScanner = new Html5QrcodeScanner(
         "qr-reader",
-        { fps: 10, qrbox: { width: 250, height: 250 } },
+        { fps: 5, qrbox: { width: 250, height: 250 } },
         false
       );
       html5QrcodeScanner.render(handleScanSuccess, handleScanFailure);
