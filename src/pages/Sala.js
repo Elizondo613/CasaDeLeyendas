@@ -502,60 +502,62 @@ export default function Sala({ usuario }) {
       //LEYENDAS
       case 'image':
         return (
-          <div className="w-full max-w-4xl mx-auto">
-            {/* Barra de tiempo con iconos */}
-            <div className="bg-orange-100 rounded-lg p-4 mb-4 flex justify-center items-center space-x-4">
-              <img src={relojIcon} alt="Reloj" className="w-8 h-8" />
-            </div>
-            
-            {/* Contenedor principal con fondo - Aumentado el padding bottom para más espacio */}
-            <div className="relative w-full h-screen max-h-[800px] rounded-lg">
-              {/* Fondo */}
-              <img 
-                src={fondoImage} 
-                alt="Fondo" 
-                className="absolute inset-0 w-full h-full object-contain"
-              />
-              
-              {/* Contenedor del contenido - Ajustado el padding y centrado */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-8">
-                {/* Logo superior */}
-                <img 
-                  src={logoLeyendas} 
-                  alt="Logo Leyendas" 
-                  className="w-12 h-12 mb-6"
-                />
+          <div className="w-full max-w-4xl mx-auto min-h-screen p-4">
+                {/* Barra superior */}
+                <div className="bg-orange-100 rounded-lg p-3 mb-2 flex justify-center items-center">
+                  <img src={relojIcon} alt="Reloj" className="w-6 h-6 sm:w-8 sm:h-8" />
+                </div>
                 
-                {/* Contenedor para imagen y texto - Reducido el tamaño máximo */}
-                <div className="flex flex-col items-center w-full max-w-sm">
-                  {imagenReto && (
-                    <div className="w-full max-w-xs mb-6">
-                      <img 
-                        src={imagenReto} 
-                        alt="Reto" 
-                        className="w-full h-auto rounded-lg shadow-lg"
-                      />
-                    </div>
-                  )}
+                {/* Contenedor del marco - Este mantiene la proporción del marco */}
+                <div className="relative w-full aspect-[3/4] sm:aspect-[4/3] md:aspect-[16/9]">
+                  {/* Marco exterior - Siempre visible y completo */}
+                  <img 
+                    src={fondoImage} 
+                    alt="Marco"
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
                   
-                  {retoTexto && (
-                    <div className="text-center mt-4 px-6">
-                      <h2 className="text-xl font-bold text-white mb-3">
-                        {retoTexto}
-                      </h2>
-                        {/* Botón de avanzar */}
-                        <button
-                          onClick={finalizarReto}
-                          className="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-lg text-xl font-semibold transition-colors"
-                        >
-                          Avanzar
-                        </button>
+                  {/* Contenedor interno - Este maneja el contenido dentro del marco */}
+                  <div className="absolute inset-[10%] sm:inset-[12%] md:inset-[10%] flex flex-col items-center">
+                    {/* Logo superior */}
+                    <img 
+                      src={logoLeyendas} 
+                      alt="Logo Leyendas" 
+                      className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-4"
+                    />
+                    
+                    {/* Contenedor para imagen y texto */}
+                    <div className="w-full h-full flex flex-col items-center justify-center">
+                      {imagenReto && (
+                        <div className="w-full h-auto max-h-[60%] relative rounded-lg overflow-hidden">
+                          <img 
+                            src={imagenReto} 
+                            alt="Reto" 
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      )}
+                      
+                      {retoTexto && (
+                        <div className="text-center mt-2 sm:mt-4 w-full px-2 sm:px-4">
+                          <h2 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2">
+                            {retoTexto}
+                          </h2>
+                          <button
+                            onClick={finalizarReto}
+                            className="bg-green-500 hover:bg-green-600 text-white 
+                                    py-1.5 px-4 sm:py-2 sm:px-6 md:py-2.5 md:px-8
+                                    rounded-lg text-sm sm:text-base font-semibold 
+                                    transition-colors"
+                          >
+                            Avanzar
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
         );
       
       //RETOS  
