@@ -154,7 +154,7 @@ const SalaPrincipal = ({ usuario }) => {
               disabled={cargando}
               className="bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
             >
-              Crear Sala
+              Unirse
             </button>
           </div>
         </div>

@@ -789,13 +789,13 @@ export default function Sala({ usuario }) {
             onClick={() => setMostrarScanner(true)}
             className="w-full bg-[#2F4F4F] text-white py-3 px-6 rounded-lg hover:bg-[#1e3333] text-xl font-semibold mb-4 transition-colors"
           >
-            Escanear Código
+            Iniciar
           </button>
         )}
 
         {/* Muestra la opción para escanear */}
         {mostrarScanner && puedeEscanear && (
-          <div className="bg-white rounded-lg p-4 mb-4">
+          <div className="rounded-lg mb-4">
             <QrScanner
               onScanSuccess={manejarScanExitoso}
               onScanFailure={(error) => {
@@ -804,16 +804,9 @@ export default function Sala({ usuario }) {
               }}
               onLoad={() => setEscanerListo(true)}
             />
-            {!escanerListo && <p className="text-gray-500">Cargando escáner...</p>}
-            <button 
-              onClick={() => {
-                setMostrarScanner(false);
-                setEscanerListo(false);
-              }}
-              className="mt-4 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
-            >
-              Cancelar escaneo
-            </button>
+            {!escanerListo && (
+              <p className="text-white text-center py-2">Cargando escáner...</p>
+            )}
           </div>
         )}
 

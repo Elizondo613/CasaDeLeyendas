@@ -1,21 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode';
+import React, { useEffect, useState, useRef } from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+import './qr-scanner.css';
 
 const QrScanner = ({ onScanSuccess, onScanFailure }) => {
   const [scanner, setScanner] = useState(null);
-  const [method, setMethod] = useState(null);
-  const [lastScannedCode, setLastScannedCode] = useState(null); // Guardar último código QR
+  const [lastScannedCode, setLastScannedCode] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const qrRef = useRef(null);
 
   const handleScanSuccess = (decodedText, decodedResult) => {
-    // Comprobar si el código QR ya fue escaneado recientemente
     if (decodedText === lastScannedCode) return;
 
     console.log('Escaneado con éxito:', decodedText);
-    setLastScannedCode(decodedText); // Guardar el QR actual
-
+    setLastScannedCode(decodedText);
     onScanSuccess(decodedText, decodedResult);
-
-    // Restablecer el último QR después de 3 segundos para permitir nuevos escaneos
     setTimeout(() => setLastScannedCode(null), 3000);
   };
 
@@ -25,66 +23,70 @@ const QrScanner = ({ onScanSuccess, onScanFailure }) => {
   };
 
   useEffect(() => {
-    if (!method) return;
-
-    let html5QrcodeScanner;
-    if (method === 'camera') {
-      html5QrcodeScanner = new Html5QrcodeScanner(
+    // Solo inicializar el escáner cuando isScanning es true
+    if (isScanning && qrRef.current) {
+      const html5QrcodeScanner = new Html5QrcodeScanner(
         "qr-reader",
-        { fps: 5, qrbox: { width: 250, height: 250 } },
+        { 
+          fps: 5, 
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1,
+          showTorchButtonIfSupported: true,
+          rememberLastUsedCamera: true,
+          supportedScanTypes: [],
+        },
         false
       );
+      
       html5QrcodeScanner.render(handleScanSuccess, handleScanFailure);
-    } else if (method === 'file') {
-      html5QrcodeScanner = new Html5Qrcode("qr-reader");
-    }
+      setScanner(html5QrcodeScanner);
 
-    setScanner(html5QrcodeScanner);
-
-    return () => {
-      if (html5QrcodeScanner) {
+      // Cleanup function
+      return () => {
         html5QrcodeScanner.clear().catch(error => {
           console.error('Error limpiando el escáner: ', error);
         });
-      }
-    };
-  }, [method]);
+      };
+    }
+  }, [isScanning]); // Depende de isScanning
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && scanner) {
-      scanner.scanFile(file, true)
-        .then(handleScanSuccess)
-        .catch(handleScanFailure);
+  const startScanner = () => {
+    setIsScanning(true);
+  };
+
+  const stopScanner = () => {
+    setIsScanning(false);
+    if (scanner) {
+      scanner.clear().catch(error => {
+        console.error('Error limpiando el escáner: ', error);
+      });
+      setScanner(null);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#B8860B] p-4">
-      <div className="max-w-md mx-auto">
-        <button 
-          onClick={() => setMethod('camera')} 
-          className="w-full bg-[#1e3333] text-white py-3 px-6 rounded-lg hover:opacity-90 transition-opacity duration-200 mb-6 font-medium"
-        >
-          Escanear QR
-        </button>
-        
-        {method === 'camera' && (
-          <div 
-            id="qr-reader" 
-            className="bg-white rounded-lg p-4 shadow-lg"
-            style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}
-          ></div>
-        )}
-        
-        {method === 'file' && (
-          <div className="bg-white rounded-lg p-4 shadow-lg">
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={handleFileUpload}
-              className="w-full p-2 border rounded"
+    <div className="bg-[#B8860B] p-4">
+      <div className="max-w-md mx-auto space-y-4">
+        {!isScanning ? (
+          <button 
+            onClick={startScanner} 
+            className="w-full bg-[#1e3333] text-white py-3 px-6 rounded-lg hover:opacity-90 transition-opacity duration-200 font-medium"
+          >
+            Escanear QR
+          </button>
+        ) : (
+          <div className="qr-container rounded-lg overflow-hidden bg-[#1e3333]">
+            <div 
+              id="qr-reader" 
+              ref={qrRef}
+              className="qr-scanner-custom"
             />
+            <button 
+              onClick={stopScanner}
+              className="w-full bg-red-500 text-white py-2 px-4 mt-2 rounded-lg hover:bg-red-600 transition-colors duration-200"
+            >
+              Cancelar escaneo
+            </button>
           </div>
         )}
       </div>
