@@ -741,21 +741,13 @@ export default function Sala({ usuario }) {
           >
             {/* Contenedor para el texto centrado */}
             <div className="absolute inset-0 flex items-center justify-between px-6">
-            <div className="absolute top-8 right-1/2 transform -translate-x-28 bg-white/20 px-3 py-1 rounded-lg backdrop-blur-sm">
-                <button
-                  onClick={handleSalirSala}
-                  className="absolute top-0 right-0 bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  Salir
-                </button>
-              </div>
-              <div className="flex-1 text-center">
+              <div className="flex-grow flex items-center justify-center space-x-4">
                 <h1 className="text-3xl font-bold text-white">
                   SALA {codigoSala}
                 </h1>
               </div>
               {/* Contador de jugadores */}
-              <div className="absolute top-8 left-1/2 transform translate-x-28 bg-white/20 px-3 py-1 rounded-lg backdrop-blur-sm">
+              <div className="bg-white/20 px-3 py-1 rounded-lg backdrop-blur-sm">
                 <span className="text-xl text-white font-medium">
                   {salaData.jugadores?.length || 0}/{salaData.maxJugadores}
                 </span>
@@ -780,7 +772,7 @@ export default function Sala({ usuario }) {
             onClick={iniciarJuego}
             className="w-full bg-[#2F4F4F] text-white py-3 px-6 rounded-lg hover:bg-[#1e3333] text-xl font-semibold mb-4 transition-colors"
           >
-            Empezar Juego
+            Iniciar sala de juego
           </button>
         )}
 
@@ -789,7 +781,7 @@ export default function Sala({ usuario }) {
             onClick={() => setMostrarScanner(true)}
             className="w-full bg-[#2F4F4F] text-white py-3 px-6 rounded-lg hover:bg-[#1e3333] text-xl font-semibold mb-4 transition-colors"
           >
-            Iniciar
+            Jugar
           </button>
         )}
 
@@ -800,17 +792,28 @@ export default function Sala({ usuario }) {
               onScanSuccess={manejarScanExitoso}
               onScanFailure={(error) => {
                 console.error('Error en el escaneo:', error);
-                setError(`Error al escanear: ${error.message || 'Desconocido'}`);
+                //setError(`Error al escanear: ${error.message || 'Desconocido'}`);
               }}
               onLoad={() => setEscanerListo(true)}
             />
             {!escanerListo && (
-              <p className="text-white text-center py-2">Cargando escáner...</p>
+              <p className="text-white text-center py-2"></p>
             )}
           </div>
         )}
 
         {renderContenidoJuego()}
+      </div>
+            {/* Botón Salir fijo en la parte inferior */}
+            <div className="p-4">
+        <div className="max-w-3xl mx-auto">
+          <button
+            onClick={handleSalirSala}
+            className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors text-lg font-medium"
+          >
+            Salir
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import candado4 from '../assets/Candado4.png';
 import avatar from '../assets/Usuario1.png';
 
 const SalaPrincipal = ({ usuario }) => {
+  const [showInstructions, setShowInstructions] = useState(false);
   const [codigoSala, setCodigoSala] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
@@ -117,13 +118,6 @@ const SalaPrincipal = ({ usuario }) => {
           <img src={avatar} alt="Avatar" className="w-12 h-12 rounded-full mr-4" />
           <h1 className="text-2xl font-bold text-white">Bienvenido, {nombreUsuario}</h1>
         </div>
-
-        <button
-          onClick={manejarCerrarSesion}
-          className="bg-red-500 mb-4 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300"
-        >
-          Cerrar Sesión
-        </button>
         
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
@@ -165,7 +159,52 @@ const SalaPrincipal = ({ usuario }) => {
           <img src={candado3} alt="Candado 3" className="w-16 h-16" />
           <img src={candado4} alt="Candado 4" className="w-16 h-16" />
         </div>
+
+        <div className="flex justify-between items-center mt-5">
+          <button
+            onClick={manejarCerrarSesion}
+            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300"
+          >
+            Cerrar Sesión
+          </button>
+
+          <button
+            onClick={() => setShowInstructions(true)}
+            className="bg-teal-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
+          >
+            Instrucciones
+          </button>
+        </div>
       </div>
+
+      {/* Modal de Instrucciones */}
+      {showInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
+            <h2 className="text-2xl font-bold mb-4">Instrucciones del Juego</h2>
+            
+            <div className="space-y-4 mb-6">
+              <p>¡Bienvenido a Leyendas! Aquí están las instrucciones básicas:</p>
+              
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Como Maestro de Leyendas, podrás crear una sala y compartir el código con otros jugadores.</li>
+                <li>Los jugadores pueden unirse usando el código de sala proporcionado.</li>
+                <li>Cada candado representa una puerta que debes abrir para asegurar tu victoria.</li>
+                <li>Deberás resolver acertijos y superar desafíos para avanzar.</li>
+              </ul>
+              
+              <p>¡Prepárate para una aventura llena de misterios y diversión!</p>
+            </div>
+
+            <button
+              onClick={() => setShowInstructions(false)}
+              className="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
+            >
+              ¡Entendido!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
