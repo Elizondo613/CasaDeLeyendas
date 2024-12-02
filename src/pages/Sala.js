@@ -427,7 +427,7 @@ export default function Sala({ usuario }) {
             {/* Barra de tiempo con iconos */}
             <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
               <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+              <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
               <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
@@ -463,7 +463,7 @@ export default function Sala({ usuario }) {
             {/* Barra de tiempo con iconos */}
             <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
               <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+              <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
               <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
@@ -543,7 +543,11 @@ export default function Sala({ usuario }) {
                           <h2 className="text-sm sm:text-base md:text-lg font-bold text-white mb-2">
                             {retoTexto}
                           </h2>
-                          <button
+                          
+                        </div>
+                      )}
+                    </div>
+                    <button
                             onClick={finalizarReto}
                             className="bg-green-500 hover:bg-green-600 text-white 
                                     py-1.5 px-4 sm:py-2 sm:px-6 md:py-2.5 md:px-8
@@ -552,9 +556,6 @@ export default function Sala({ usuario }) {
                           >
                             Avanzar
                           </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -592,14 +593,14 @@ export default function Sala({ usuario }) {
                   />
                   
                   {/* Texto del reto */}
-                  <div className="bg-white/90 rounded-lg p-6 max-w-lg w-full mx-auto mb-6">
-                    <p className="text-xl md:text-2xl text-center font-bold">
+                  <div className="bg-gray/90 rounded-lg p-6 max-w-lg w-full mx-auto mb-6">
+                    <p className="text-xl text-white md:text-2xl text-center font-bold">
                       {retoTexto}
                     </p>
                   </div>
                   
                   {/* Mensaje de likes */}
-                  <div className="bg-blue-500 text-white rounded-lg px-6 py-3 mb-6">
+                  <div className="bg-blue-500 text-white rounded-lg px-6 py-3 mb-6 mt-5">
                     <p className="text-lg font-semibold text-center">
                       Obtén {likesNeeded} reacciones
                     </p>
@@ -649,7 +650,7 @@ export default function Sala({ usuario }) {
                 {/* Barra de tiempo */}
                 <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
                   <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
                   <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
@@ -687,7 +688,7 @@ export default function Sala({ usuario }) {
                 {/* Barra de tiempo */}
                 <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
                   <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante || 0}s</span>
+                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
                   <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
