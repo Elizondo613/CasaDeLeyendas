@@ -488,6 +488,9 @@ export default function Sala({ usuario }) {
                 <h2 className="text-2xl md:text-3xl lg:text-5xl font-bold text-white text-center mb-4">
                   {salaData.retoActual.text}
                 </h2>
+                <h3 className="text-2xl md:text-3xl lg:text-5xl font-bold text-white text-center mb-4">Categoría: 
+                  {salaData.retoActual.category}
+                </h3>
                 <button
                   onClick={finalizarReto}
                   className="mt-6 bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 px-6 md:px-8 rounded-lg text-base md:text-xl font-semibold transition-colors"
