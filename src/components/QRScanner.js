@@ -4,17 +4,30 @@ import './qr-scanner.css';
 
 const QrScanner = ({ onScanSuccess, onScanFailure }) => {
   const [scanner, setScanner] = useState(null);
-  const [lastScannedCode, setLastScannedCode] = useState(null);
+  const [lastScan, setLastScan] = useState({ code: null, timestamp: 0 });
   const [isScanning, setIsScanning] = useState(false);
   const qrRef = useRef(null);
+  const SCAN_DELAY = 1000; // Tiempo mínimo entre escaneos en milisegundos
 
   const handleScanSuccess = (decodedText, decodedResult) => {
-    if (decodedText === lastScannedCode) return;
+    const currentTime = Date.now();
+    
+    // Verificar si es el mismo código y si ha pasado suficiente tiempo
+    if (decodedText === lastScan.code && 
+        currentTime - lastScan.timestamp < SCAN_DELAY) {
+      return;
+    }
 
     console.log('Escaneado con éxito:', decodedText);
-    setLastScannedCode(decodedText);
+    
+    // Actualizar último escaneo con el código y timestamp
+    setLastScan({
+      code: decodedText,
+      timestamp: currentTime
+    });
+    
+    // Llamar al callback de éxito
     onScanSuccess(decodedText, decodedResult);
-    setTimeout(() => setLastScannedCode(null), 3000);
   };
 
   const handleScanFailure = (error) => {
@@ -23,45 +36,60 @@ const QrScanner = ({ onScanSuccess, onScanFailure }) => {
   };
 
   useEffect(() => {
-    // Solo inicializar el escáner cuando isScanning es true
+    let scannerInstance = null;
+
     if (isScanning && qrRef.current) {
-      const html5QrcodeScanner = new Html5QrcodeScanner(
+      // Configurar el escáner
+      scannerInstance = new Html5QrcodeScanner(
         "qr-reader",
         { 
-          fps: 5, 
+          fps: 10,  // Aumentado para mejor respuesta
           qrbox: { width: 250, height: 250 },
           aspectRatio: 1,
           showTorchButtonIfSupported: true,
           rememberLastUsedCamera: true,
           supportedScanTypes: [],
+          experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+          }
         },
         false
       );
       
-      html5QrcodeScanner.render(handleScanSuccess, handleScanFailure);
-      setScanner(html5QrcodeScanner);
+      scannerInstance.render(handleScanSuccess, handleScanFailure);
+      setScanner(scannerInstance);
 
       // Cleanup function
       return () => {
-        html5QrcodeScanner.clear().catch(error => {
-          console.error('Error limpiando el escáner: ', error);
-        });
+        if (scannerInstance) {
+          scannerInstance.clear()
+            .catch(error => {
+              console.error('Error limpiando el escáner: ', error);
+            })
+            .finally(() => {
+              setLastScan({ code: null, timestamp: 0 });
+            });
+        }
       };
     }
-  }, [isScanning]); // Depende de isScanning
+  }, [isScanning]);
 
   const startScanner = () => {
     setIsScanning(true);
+    setLastScan({ code: null, timestamp: 0 });
   };
 
-  const stopScanner = () => {
-    setIsScanning(false);
+  const stopScanner = async () => {
     if (scanner) {
-      scanner.clear().catch(error => {
+      try {
+        await scanner.clear();
+      } catch (error) {
         console.error('Error limpiando el escáner: ', error);
-      });
+      }
       setScanner(null);
     }
+    setIsScanning(false);
+    setLastScan({ code: null, timestamp: 0 });
   };
 
   return (

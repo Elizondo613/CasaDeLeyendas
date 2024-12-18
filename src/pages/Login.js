@@ -7,6 +7,7 @@ import {
   onAuthStateChanged,
   sendPasswordResetEmail 
 } from 'firebase/auth';
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
 
 import backgroundImageLogin from '../assets/BackgroundLogin.png';
 
@@ -17,6 +18,7 @@ const Login = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [showResetPassword, setShowResetPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,7 +27,6 @@ const Login = () => {
         navigate('/');
       }
     });
-
     return () => unsubscribe();
   }, [navigate]);
 
@@ -76,90 +77,108 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-yellow-700">
-      <div 
-        className="relative w-full max-w-md p-8 bg-no-repeat bg-contain bg-center"
-        style={{ 
-          backgroundImage: `url(${backgroundImageLogin})`,
-          aspectRatio: "1 / 1",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center"
-        }}
-      >
-        <h2 className="text-3xl font-bold text-center text-pink-600 mb-6">
-          {showResetPassword 
-            ? "Recuperar Contraseña" 
-            : (isLogin ? "Iniciar sesión" : "Registrarse")}
-        </h2>
-        
-        {error && <p className="p-2 text-red-600 bg-red-100 rounded mb-4">{error}</p>}
-        {successMessage && <p className="p-2 text-green-600 bg-green-100 rounded mb-4">{successMessage}</p>}
-        
-        {showResetPassword ? (
-          <form onSubmit={handleResetPassword} className="space-y-4 w-3/4">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Correo electrónico"
-              required
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-yellow-500 bg-white placeholder-gray-400"
-            />
-            <button
-              type="submit"
-              className="w-full py-3 font-semibold text-white bg-yellow-600 rounded hover:bg-yellow-700 transition duration-200"
-            >
-              Enviar correo de recuperación
-            </button>
-            <button
-              type="button"
-              onClick={toggleResetPassword}
-              className="w-full py-3 font-semibold text-yellow-600 bg-transparent border border-yellow-600 rounded hover:bg-yellow-50 transition duration-200"
-            >
-              Volver al inicio de sesión
-            </button>
-          </form>
-        ) : (
-          <>
-            <form onSubmit={handleAuth} className="space-y-4 w-3/4">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Correo electrónico"
-                required
-                className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-yellow-500 bg-white placeholder-gray-400"
-              />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Contraseña"
-                required
-                className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-yellow-500 bg-white placeholder-gray-400"
-              />
-              <button
-                type="submit"
-                className="w-full py-3 font-semibold text-white bg-yellow-600 rounded hover:bg-yellow-700 transition duration-200"
-              >
-                {isLogin ? "Iniciar Partida" : "Registrarse"}
-              </button>
-            </form>
-            
-            <div className="mt-4 space-y-2 text-center">
+    <div className="flex items-center justify-center min-h-screen bg-yellow-700 p-4">
+      <div className="w-full max-w-sm sm:max-w-lg mx-auto px-4">
+        {/* Marco con fondo de imagen */}
+        <div 
+          className="relative flex items-center justify-center bg-no-repeat bg-cover bg-center rounded-lg shadow-lg overflow-hidden"
+          style={{ backgroundImage: `url(${backgroundImageLogin})` }}
+        >
+          {/* Contenido */}
+          <div className="relative z-10 w-full px-6 py-8 sm:px-8 sm:py-12 space-y-6 rounded-lg">
+            <h2 className="text-3xl sm:text-4xl font-bold text-center text-pink-600 leading-relaxed">
+              {showResetPassword 
+                ? "Recuperar Contraseña" 
+                : (isLogin ? "Iniciar sesión" : "Registrarse")}
+            </h2>
+
+            {/* Mensajes de error y éxito */}
+            {error && (
+              <div className="p-3 text-sm text-red-600 bg-red-100 rounded-lg">
+                {error}
+              </div>
+            )}
+            {successMessage && (
+              <div className="p-3 text-sm text-green-600 bg-green-100 rounded-lg">
+                {successMessage}
+              </div>
+            )}
+
+            {/* Formulario */}
+            <div className="space-y-6">
+              {showResetPassword ? (
+                <form onSubmit={handleResetPassword} className="space-y-6">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Correo electrónico"
+                    required
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full py-3 font-semibold text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition duration-200"
+                  >
+                    Enviar correo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={toggleResetPassword}
+                    className="w-full py-3 font-semibold text-yellow-600 border border-yellow-600 rounded-lg hover:bg-yellow-50 transition duration-200"
+                  >
+                    Volver
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleAuth} className="space-y-6">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Correo electrónico"
+                    required
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Contraseña"
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                    >
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-3 font-semibold text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition duration-200"
+                  >
+                    {isLogin ? "Iniciar Partida" : "Registrarse"}
+                  </button>
+                </form>
+              )}
+
+              {/* Enlaces */}
               {isLogin && (
                 <button
                   onClick={toggleResetPassword}
-                  className="text-sm text-pink-600 hover:text-pink-800"
+                  className="block text-center text-pink-600 hover:text-pink-800"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
               )}
-              <p className="text-sm text-gray-600">
-                {isLogin ? "¿No tienes una cuenta?" : "¿Ya tienes una cuenta?"}
+              <p className="text-center text-gray-600">
+                {isLogin ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}
                 <button
+                  type="button"
                   onClick={toggleAuthMode}
                   className="ml-1 text-pink-600 hover:text-pink-800"
                 >
@@ -167,8 +186,8 @@ const Login = () => {
                 </button>
               </p>
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

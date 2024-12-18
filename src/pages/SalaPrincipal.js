@@ -156,7 +156,7 @@ const SalaPrincipal = ({ usuario }) => {
         <div className="mt-8 flex justify-between">
           <img src={candado1} alt="Candado 1" className="w-16 h-16" />
           <img src={candado2} alt="Candado 2" className="w-16 h-16" />
-          <img src={candado3} alt="Candado 3" className="w-16 h-16" />
+          <img src={candado3} alt="Candado 3" className="w-14 h-16" />
           <img src={candado4} alt="Candado 4" className="w-16 h-16" />
         </div>
 

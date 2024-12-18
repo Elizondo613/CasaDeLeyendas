@@ -49,6 +49,7 @@ export default function Sala({ usuario }) {
   const [imagenReto, setImagenReto] = useState(null);
   const [retoTexto, setRetoTexto] = useState(null);
   const [escanerListo, setEscanerListo] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const limpiarTemporizador = useCallback(() => {
     if (temporizadorID) {
@@ -609,14 +610,15 @@ export default function Sala({ usuario }) {
                     </p>
                   </div>
                   
-                  {/* Botón de avanzar */}
-                  <button
+                  
+                </div>
+                {/* Botón de avanzar */}
+                <button
                     onClick={finalizarReto}
                     className="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-lg text-xl font-semibold transition-colors"
                   >
                     Avanzar
                   </button>
-                </div>
               </div>
             </div>
           );
@@ -810,15 +812,47 @@ export default function Sala({ usuario }) {
       </div>
             {/* Botón Salir fijo en la parte inferior */}
             <div className="p-4">
-        <div className="max-w-3xl mx-auto">
-          <button
-            onClick={handleSalirSala}
-            className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors text-lg font-medium"
-          >
-            Salir
-          </button>
-        </div>
+      <div className="max-w-3xl mx-auto">
+        {/* Botón Salir */}
+        <button
+          onClick={() => setShowModal(true)}
+          className="w-full bg-red-500 text-white py-3 px-4 rounded-lg hover:bg-red-600 transition-colors text-lg font-medium"
+        >
+          Salir
+        </button>
+
+        {/* Modal de confirmación */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+              <h2 className="text-xl font-bold mb-4">¿Estás seguro que deseas salir?</h2>
+              <p className="text-gray-600 mb-6">
+                {salaData?.anfitrion === usuario.uid
+                  ? "Si sales de la sala, esta se cerrará para todos los jugadores ya que eres el anfitrión."
+                  : "Si sales de la sala, perderás tu lugar y tendrás que volver a unirte."}
+              </p>
+              <div className="flex gap-4 justify-end">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    handleSalirSala();
+                    setShowModal(false);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+                >
+                  Salir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
     </div>
   );
 }
