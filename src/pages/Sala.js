@@ -559,10 +559,10 @@ export default function Sala({ usuario }) {
                                     transition-colors"
                           >
                             Avanzar
-                          </button>
+                    </button>
                   </div>
                 </div>
-              </div>
+            </div>
         );
       
       //RETOS  
@@ -609,16 +609,15 @@ export default function Sala({ usuario }) {
                       Obtén {likesNeeded} reacciones
                     </p>
                   </div>
-                  
-                  
-                </div>
-                {/* Botón de avanzar */}
-                <button
+                  {/* Botón de avanzar */}
+                  <button
                     onClick={finalizarReto}
                     className="bg-green-500 hover:bg-green-600 text-white py-3 px-8 rounded-lg text-xl font-semibold transition-colors"
                   >
                     Avanzar
                   </button>
+                  
+                </div>
               </div>
             </div>
           );
