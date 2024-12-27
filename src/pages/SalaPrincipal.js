@@ -39,7 +39,12 @@ const SalaPrincipal = ({ usuario }) => {
       const salaRef = doc(db, 'salas', codigoGenerado);
       
       const nuevaSala = {
-        anfitrion: usuario.uid,
+        anfitrion: {
+          id: usuario.uid,
+          isOnline: true,
+          lastActive: serverTimestamp(),
+          disconnectedAt: null
+        },
         jugadores: [usuario.uid],
         createdAt: serverTimestamp(),
         estadoJuego: 'esperando',
@@ -52,7 +57,9 @@ const SalaPrincipal = ({ usuario }) => {
         maxJugadores: 6,
         puntos: {
           [usuario.uid]: 0
-        }
+        },
+        anfitrionTemporal: null,
+        tiempoGracia: null
       };
 
       await setDoc(salaRef, nuevaSala);

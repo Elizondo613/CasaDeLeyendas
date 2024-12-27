@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { doc, updateDoc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { doc, updateDoc, onSnapshot, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import QrScanner from '../components/QRScanner';
@@ -65,21 +65,33 @@ export default function Sala({ usuario }) {
       if (salaData) {
         const salaRef = doc(db, 'salas', codigoSala);
         
-        // Si es el anfitrión, eliminar la sala completa
-        if (salaData.anfitrion === usuario.uid) {
+        // Si es el anfitrión
+        if (salaData.anfitrion.id === usuario.uid) {
+          const tiempoGracia = new Date();
+          tiempoGracia.setMinutes(tiempoGracia.getMinutes() + 2); // 2 minutos de gracia
+          
+          // Seleccionar un jugador aleatorio (excluyendo al anfitrión)
+          const jugadoresDisponibles = salaData.jugadores.filter(id => id !== usuario.uid);
+          const anfitrionTemporal = jugadoresDisponibles.length > 0 
+            ? jugadoresDisponibles[Math.floor(Math.random() * jugadoresDisponibles.length)]
+            : null;
+  
           await updateDoc(salaRef, {
-            estadoJuego: 'finalizado',
+            'anfitrion.isOnline': false,
+            'anfitrion.disconnectedAt': serverTimestamp(),
+            estadoJuego: 'pausado',
+            tiempoGracia: tiempoGracia,
+            anfitrionTemporal: anfitrionTemporal,
             jugadores: salaData.jugadores.filter(id => id !== usuario.uid)
           });
         } else {
-          // Si no es anfitrión, solo remover al jugador de la lista
+          // Si no es anfitrión, solo remover al jugador
           await updateDoc(salaRef, {
             jugadores: salaData.jugadores.filter(id => id !== usuario.uid)
           });
         }
       }
       
-      // Navegar de vuelta a la sala principal
       navigate('/');
     } catch (error) {
       console.error('Error al salir de la sala:', error);
@@ -121,14 +133,53 @@ export default function Sala({ usuario }) {
     setRetoTexto(null);
   }, [codigoSala, limpiarTemporizador]);
 
+
   useEffect(() => {
     const salaRef = doc(db, 'salas', codigoSala);
     
-    const unsubscribe = onSnapshot(salaRef, (doc) => {
+    const unsubscribe = onSnapshot(salaRef, async (doc) => {
       if (doc.exists()) {
         const data = { id: doc.id, ...doc.data() };
         setSalaData(data);
-        
+
+        // Manejar reconexión del anfitrión
+        if (data.anfitrion.id === usuario.uid && !data.anfitrion.isOnline) {
+          const ahora = new Date();
+          const tiempoGracia = data.tiempoGracia?.toDate();
+          
+          if (tiempoGracia && ahora < tiempoGracia) {
+            // El anfitrión regresa dentro del tiempo de gracia
+            await updateDoc(salaRef, {
+              'anfitrion.isOnline': true,
+              'anfitrion.disconnectedAt': null,
+              tiempoGracia: null,
+              anfitrionTemporal: null,
+              estadoJuego: 'iniciado'
+            });
+          }
+        }
+
+        // Verificar si el tiempo de gracia expiró
+        if (data.tiempoGracia) {
+          const ahora = new Date();
+          const tiempoGracia = data.tiempoGracia.toDate();
+          
+          if (ahora > tiempoGracia && data.anfitrionTemporal) {
+            // Transferir el rol de anfitrión
+            await updateDoc(salaRef, {
+              anfitrion: {
+                id: data.anfitrionTemporal,
+                isOnline: true,
+                lastActive: serverTimestamp(),
+                disconnectedAt: null
+              },
+              tiempoGracia: null,
+              anfitrionTemporal: null,
+              estadoJuego: 'iniciado'
+            });
+          }
+        }
+
         if (data.puntos) {
           setPuntos(data.puntos);
         } else {
@@ -141,7 +192,6 @@ export default function Sala({ usuario }) {
           setPuntos(prevPuntos => ({ ...prevPuntos, ...puntosIniciales }));
         }
         
-        // Modificar esta condición para excluir explícitamente 'image' y 'retoRedes'
         if (data.tiempoFinReto && !['image', 'retoRedes'].includes(data.tipoReto)) {
           const tiempoFin = data.tiempoFinReto.toDate();
           const actualizarTemporizador = () => {
@@ -177,7 +227,7 @@ export default function Sala({ usuario }) {
       unsubscribe();
       limpiarTemporizador();
     };
-}, [codigoSala, navigate, finalizarReto, limpiarTemporizador, temporizadorID, puntos]);
+}, [codigoSala, usuario.uid, navigate, finalizarReto, limpiarTemporizador, temporizadorID, puntos]);
 
   const iniciarJuego = async () => {
     const salaRef = doc(db, 'salas', codigoSala);
@@ -428,7 +478,7 @@ export default function Sala({ usuario }) {
             {/* Barra de tiempo con iconos */}
             <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
               <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
+              <span className="text-xl md:text-2xl font-bold">{}</span>
               <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
@@ -464,7 +514,7 @@ export default function Sala({ usuario }) {
             {/* Barra de tiempo con iconos */}
             <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
               <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
+              <span className="text-xl md:text-2xl font-bold">{}</span>
               <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
@@ -654,7 +704,7 @@ export default function Sala({ usuario }) {
                 {/* Barra de tiempo */}
                 <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
                   <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
+                  <span className="text-xl md:text-2xl font-bold">{}</span>
                   <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
@@ -692,7 +742,7 @@ export default function Sala({ usuario }) {
                 {/* Barra de tiempo */}
                 <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
                   <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-                  <span className="text-xl md:text-2xl font-bold">{tiempoRestante}</span>
+                  <span className="text-xl md:text-2xl font-bold">{}</span>
                   <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
@@ -726,7 +776,7 @@ export default function Sala({ usuario }) {
   if (cargando) return <div className="text-center text-white text-xl">Cargando sala...</div>;
   if (!salaData) return <div className="text-center text-white text-xl">Sala no encontrada</div>;
 
-  const esAnfitrion = salaData.anfitrion === usuario.uid;
+  const esAnfitrion = salaData.anfitrion.id === usuario.uid;
   const puedeEscanear = salaData.estadoJuego === 'iniciado';
   const estaJugando = salaData.estadoJuego === 'jugando';
 
