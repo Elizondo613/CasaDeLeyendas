@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { doc, updateDoc, onSnapshot, Timestamp, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, onSnapshot, Timestamp, serverTimestamp } from 'firebase/firestore';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import QrScanner from '../components/QRScanner';
 import { db } from '../firebaseConfig';
+import GameTimer from './Temporizador';
 
 //Importacion de imagenes:
 import llave1 from '../assets/Llave1.png';
@@ -40,24 +41,15 @@ export default function Sala({ usuario }) {
   
   const [salaData, setSalaData] = useState(null);
   const [mostrarScanner, setMostrarScanner] = useState(false);
-  const [tiempoRestante, setTiempoRestante] = useState(null);
   const [error, setError] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [respuestaSeleccionada, setRespuestaSeleccionada] = useState(null);
-  const [temporizadorID, setTemporizadorID] = useState(null);
   const [puntos, setPuntos] = useState({});
   const [imagenReto, setImagenReto] = useState(null);
   const [retoTexto, setRetoTexto] = useState(null);
   const [escanerListo, setEscanerListo] = useState(false);
   const [showModal, setShowModal] = useState(false);
-
-  const limpiarTemporizador = useCallback(() => {
-    if (temporizadorID) {
-      clearInterval(temporizadorID);
-      setTemporizadorID(null);
-    }
-    setTiempoRestante(null);
-  }, [temporizadorID]);
+  const [nombresUsuarios, setNombresUsuarios] = useState({})
 
   // Salir de la sala
   const handleSalirSala = async () => {
@@ -117,7 +109,6 @@ export default function Sala({ usuario }) {
 
   //Define el reto como finalizado
   const finalizarReto = useCallback(async () => {
-    limpiarTemporizador();
     
     const salaRef = doc(db, 'salas', codigoSala);
     await updateDoc(salaRef, {
@@ -131,8 +122,27 @@ export default function Sala({ usuario }) {
     setRespuestaSeleccionada(null);
     setImagenReto(null);
     setRetoTexto(null);
-  }, [codigoSala, limpiarTemporizador]);
+  }, [codigoSala]);
 
+  // Añadir esta función para cargar los nombres de usuario
+  const cargarNombresUsuarios = async (jugadores) => {
+    const nombres = {};
+    for (const jugador of jugadores) {
+      const jugadorId = typeof jugador === 'string' ? jugador : jugador.id;
+      try {
+        const userDoc = await getDoc(doc(db, 'usuarios', jugadorId));
+        if (userDoc.exists()) {
+          nombres[jugadorId] = userDoc.data().displayName;
+        } else {
+          nombres[jugadorId] = `Usuario ${jugadorId.slice(0, 4)}`;
+        }
+      } catch (error) {
+        console.error('Error al cargar nombre de usuario:', error);
+        nombres[jugadorId] = `Usuario ${jugadorId.slice(0, 4)}`;
+      }
+    }
+    setNombresUsuarios(nombres);
+  };
 
   useEffect(() => {
     const salaRef = doc(db, 'salas', codigoSala);
@@ -141,6 +151,8 @@ export default function Sala({ usuario }) {
       if (doc.exists()) {
         const data = { id: doc.id, ...doc.data() };
         setSalaData(data);
+
+        await cargarNombresUsuarios(data.jugadores);
 
         // Manejar reconexión del anfitrión
         if (data.anfitrion.id === usuario.uid && !data.anfitrion.isOnline) {
@@ -191,31 +203,6 @@ export default function Sala({ usuario }) {
           });
           setPuntos(prevPuntos => ({ ...prevPuntos, ...puntosIniciales }));
         }
-        
-        if (data.tiempoFinReto && !['image', 'retoRedes'].includes(data.tipoReto)) {
-          const tiempoFin = data.tiempoFinReto.toDate();
-          const actualizarTemporizador = () => {
-            const ahora = new Date();
-            const diferencia = Math.max(0, Math.floor((tiempoFin - ahora) / 1000));
-
-            setTiempoRestante(diferencia);
-            
-            if (diferencia <= 0) {
-              limpiarTemporizador();
-              if (data.estadoJuego === 'jugando') {
-                finalizarReto();
-              }
-            }
-          };
-          
-          if (!temporizadorID) {
-            actualizarTemporizador();
-            const intervalo = setInterval(actualizarTemporizador, 1000);
-            setTemporizadorID(intervalo);
-          }
-        } else {
-          limpiarTemporizador();
-        }
       } else {
         setError('La sala no existe');
         setTimeout(() => navigate('/'), 3000);
@@ -225,15 +212,25 @@ export default function Sala({ usuario }) {
   
     return () => {
       unsubscribe();
-      limpiarTemporizador();
     };
-}, [codigoSala, usuario.uid, navigate, finalizarReto, limpiarTemporizador, temporizadorID, puntos]);
+  }, [codigoSala, usuario.uid, navigate, puntos]);
 
+  //Inicio de juego
   const iniciarJuego = async () => {
-    const salaRef = doc(db, 'salas', codigoSala);
-    await updateDoc(salaRef, {
-      estadoJuego: 'iniciado'
-    });
+    if (!esAnfitrion) {
+      setError('Solo el anfitrión puede iniciar el juego');
+      return;
+    }
+  
+    try {
+      const salaRef = doc(db, 'salas', codigoSala);
+      await updateDoc(salaRef, {
+        estadoJuego: 'iniciado'
+      });
+    } catch (error) {
+      console.error('Error al iniciar el juego:', error);
+      setError('Error al iniciar el juego');
+    }
   };
 
   //Maneja con exito las respuestas para el QR
@@ -259,7 +256,7 @@ export default function Sala({ usuario }) {
       
       // Modificar esta parte para asignar tiempo solo a los retos que lo necesitan
       const tiempoFinReto = ['trivia', 'riddle', 'mimica'].includes(tipoReto)
-      ? Timestamp.fromDate(new Date(Date.now() + 60000))  // Usar Timestamp de Firestore
+      ? Timestamp.fromDate(new Date(Date.now() + 30000))  // Usar Timestamp de Firestore
       : tipoReto === 'reto'
       ? Timestamp.fromDate(new Date(Date.now() + 10000))
       : null;
@@ -313,69 +310,90 @@ export default function Sala({ usuario }) {
 
   //Logica de llaves
   const actualizarPuntos = async (jugadorId, incremento) => {
-    const nuevosPuntos = Math.max(0, Math.min(4, (puntos[jugadorId] || 0) + incremento));
-    
-    // Actualizar el estado local
-    setPuntos(prevPuntos => ({
-      ...prevPuntos,
-      [jugadorId]: nuevosPuntos
-    }));
+    if (!esAnfitrion) {
+      setError('Solo el anfitrión puede modificar los puntos');
+      return;
+    }
   
-    // Actualizar Firestore
-    const salaRef = doc(db, 'salas', codigoSala);
-    await updateDoc(salaRef, {
-      [`puntos.${jugadorId}`]: nuevosPuntos
-    });
+    try {
+      const salaRef = doc(db, 'salas', codigoSala);
+      const nuevoPuntaje = (puntos[jugadorId] || 0) + incremento;
+      
+      // Asegurarse de que los puntos estén entre 0 y 4
+      if (nuevoPuntaje >= 0 && nuevoPuntaje <= 4) {
+        await updateDoc(salaRef, {
+          [`puntos.${jugadorId}`]: nuevoPuntaje
+        });
+      }
+    } catch (error) {
+      console.error('Error al actualizar puntos:', error);
+      setError('Error al actualizar puntos');
+    }
   };
 
   //Avatares y nombres para los jugadores - llaves
   const renderJugadores = () => (
     <ul className="space-y-2">
-      {salaData.jugadores?.map((jugador, index) => (
-        <li 
-          key={jugador}
-          className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 ${
-            index % 2 === 0 ? 'bg-[#fff3e0]' : 'bg-[#ffe0b2]'
-          } rounded-lg space-y-4 sm:space-y-0`}
-        >
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 flex items-center justify-center">
-              <img src={usuarioImages[index % usuarioImages.length]} alt={`Usuario ${index + 1}`} className="w-10 h-10" />
+      {salaData.jugadores?.map((jugador, index) => {
+        // Determinar el ID del jugador
+        const jugadorId = typeof jugador === 'string' ? jugador : jugador.id;
+  
+        // Obtener el nombre del jugador desde nombresUsuarios o un nombre genérico
+        const nombreJugador = nombresUsuarios[jugadorId] || `Jugador ${jugadorId.slice(0, 10)}`;
+  
+        // Verificar si el jugador es el usuario actual
+        const esUsuarioActual = jugadorId === usuario.uid;
+  
+        // Verificar si el jugador es el anfitrión
+        const esAnfitrion = jugadorId === salaData.anfitrion.id;
+  
+        return (
+          <li
+            key={jugadorId}
+            className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 ${
+              index % 2 === 0 ? 'bg-[#fff3e0]' : 'bg-[#ffe0b2]'
+            } rounded-lg space-y-4 sm:space-y-0`}
+          >
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 flex items-center justify-center">
+                <img src={usuarioImages[index % usuarioImages.length]} alt={`Usuario ${index + 1}`} className="w-10 h-10" />
+              </div>
+              <span className="text-xl font-medium text-gray-800">
+                {esUsuarioActual ? 'Tú' : nombreJugador}
+                {esAnfitrion && ' (Anfitrión)'}
+              </span>
             </div>
-            <span className="text-xl font-medium text-gray-800">
-              {jugador === usuario.uid ? 'Tú' : `Jugador ${jugador.slice(0, 4)}`}
-              {jugador === salaData.anfitrion && ' (Anfitrión)'}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="w-8 sm:w-10 h-8 sm:h-10 flex items-center justify-center">
-                {i < (puntos[jugador] || 0) && (
-                  <img src={llaveImages[i]} alt={`Llave ${i + 1}`} className="w-6 sm:w-8 h-6 sm:h-8" />
-                )}
-              </div>
-            ))}
-            {salaData.anfitrion === usuario.uid && (
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => actualizarPuntos(jugador, -1)}
-                  className="bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-xl hover:bg-red-600"
-                >
-                  -
-                </button>
-                <button 
-                  onClick={() => actualizarPuntos(jugador, 1)}
-                  className="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-xl hover:bg-green-600"
-                >
-                  +
-                </button>
-              </div>
-            )}
-          </div>
-        </li>
-      ))}
+            <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="w-8 sm:w-10 h-8 sm:h-10 flex items-center justify-center">
+                  {i < (puntos[jugadorId] || 0) && (
+                    <img src={llaveImages[i]} alt={`Llave ${i + 1}`} className="w-6 sm:w-8 h-6 sm:h-8" />
+                  )}
+                </div>
+              ))}
+              {esAnfitrion && (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => actualizarPuntos(jugadorId, -1)}
+                    className="bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-xl hover:bg-red-600"
+                  >
+                    -
+                  </button>
+                  <button
+                    onClick={() => actualizarPuntos(jugadorId, 1)}
+                    className="bg-green-500 text-white w-8 h-8 rounded-full flex items-center justify-center text-xl hover:bg-green-600"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
+  
 
   //Pantalla para cada caso de lectura de QR
   const renderContenidoJuego = () => {
@@ -478,7 +496,10 @@ export default function Sala({ usuario }) {
             {/* Barra de tiempo con iconos */}
             <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
               <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="text-xl md:text-2xl font-bold">{}</span>
+              <GameTimer 
+                tiempoFinReto={salaData.tiempoFinReto}
+                onTimeUp={finalizarReto}
+              />
               <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
@@ -504,7 +525,7 @@ export default function Sala({ usuario }) {
                   ¡Adivina el personaje!
                 </h2>
                 <p className="text-base md:text-lg lg:text-xl text-white text-center mt-4 max-w-md mx-auto">
-                  Los demás jugadores tienen la pista. ¡Intenta adivinar!
+                  Los demás jugadores te irán dando pistas. ¡Intenta adivinar!
                 </p>
               </div>
             </div>
@@ -514,7 +535,10 @@ export default function Sala({ usuario }) {
             {/* Barra de tiempo con iconos */}
             <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
               <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="text-xl md:text-2xl font-bold">{}</span>
+              <GameTimer 
+                tiempoFinReto={salaData.tiempoFinReto}
+                onTimeUp={finalizarReto}
+              />
               <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
             </div>
             
@@ -700,16 +724,19 @@ export default function Sala({ usuario }) {
         case 'mimica':
           if (esJugadorActual) {
             return (
-              <div className="w-full max-w-4xl mx-auto px-4">
+              <div className="w-full max-w-4xl mx-auto px-4 flex flex-col items-center">
                 {/* Barra de tiempo */}
                 <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
                   <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-                  <span className="text-xl md:text-2xl font-bold">{}</span>
+                  <GameTimer 
+                    tiempoFinReto={salaData.tiempoFinReto}
+                    onTimeUp={finalizarReto}
+                  />
                   <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
                 {/* Contenedor de la mímica */}
-                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg">
+                <div className="relative w-full min-h-[450px] md:min-h-[500px] lg:min-h-[600px] rounded-lg mb-4">
                   {/* Fondo */}
                   <img 
                     src={fondoMimica} 
@@ -734,6 +761,12 @@ export default function Sala({ usuario }) {
                     </p>
                   </div>
                 </div>
+                <button
+                  onClick={finalizarReto}
+                  className="bg-green-500 hover:bg-green-600 text-white py-2 md:py-3 px-6 md:px-8 rounded-lg text-base md:text-xl font-semibold transition-colors -mt-8"
+                >
+                  ¡El jugador ha acertado!
+                </button>
               </div>
             );
           } else {
@@ -742,7 +775,10 @@ export default function Sala({ usuario }) {
                 {/* Barra de tiempo */}
                 <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
                   <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
-                  <span className="text-xl md:text-2xl font-bold">{}</span>
+                  <GameTimer 
+                    tiempoFinReto={salaData.tiempoFinReto}
+                    onTimeUp={finalizarReto}
+                  />
                   <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
                 </div>
         
@@ -776,7 +812,7 @@ export default function Sala({ usuario }) {
   if (cargando) return <div className="text-center text-white text-xl">Cargando sala...</div>;
   if (!salaData) return <div className="text-center text-white text-xl">Sala no encontrada</div>;
 
-  const esAnfitrion = salaData.anfitrion.id === usuario.uid;
+  const esAnfitrion = salaData?.anfitrion?.id === usuario.uid;
   const puedeEscanear = salaData.estadoJuego === 'iniciado';
   const estaJugando = salaData.estadoJuego === 'jugando';
 

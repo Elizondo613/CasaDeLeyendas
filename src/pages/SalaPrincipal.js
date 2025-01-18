@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, setDoc, getDoc, updateDoc, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -16,19 +16,47 @@ const SalaPrincipal = ({ usuario }) => {
   const [codigoSala, setCodigoSala] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
+  const [displayName, setDisplayName] = useState('');
   const navigate = useNavigate();
 
-  const nombreUsuario = usuario.email.split('@')[0];
+  const VERSION_JUEGO = '1.0.0';
+  const ACTUALIZACIONES = [
+    'Ahora puedes cambiar tu nombre en la nueva sección de perfil y que todos lo vean!',
+    'En cada actualización iremos implementando mejoras para que tengas una mejor experiencia de juego!'
+  ]
 
-  const manejarCerrarSesion = async () => {
-    try {
-      await signOut(auth);
-      navigate('/');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      setError('Error al cerrar sesión. Por favor, intenta de nuevo.');
-    }
-  };
+  //const nombreUsuario = usuario.email.split('@')[0];
+
+    // Cargar el nombre de usuario
+    useEffect(() => {
+      const cargarNombreUsuario = async () => {
+        try {
+          const userDoc = await getDoc(doc(db, 'usuarios', usuario.uid));
+          if (userDoc.exists() && userDoc.data().displayName) {
+            setDisplayName(userDoc.data().displayName);
+          } else {
+            // Usar el email como fallback
+            setDisplayName(usuario.email.split('@')[0]);
+          }
+        } catch (error) {
+          console.error('Error al cargar el nombre de usuario:', error);
+          setDisplayName(usuario.email.split('@')[0]);
+        }
+      };
+  
+      cargarNombreUsuario();
+    }, [usuario]);
+
+    // Cerramos sesión
+    const manejarCerrarSesion = async () => {
+      try {
+        await signOut(auth);
+        navigate('/');
+      } catch (error) {
+        console.error('Error al cerrar sesión:', error);
+        setError('Error al cerrar sesión. Por favor, intenta de nuevo.');
+      }
+    };
 
   const manejarSerAnfitrion = async () => {
     setCargando(true);
@@ -123,7 +151,7 @@ const SalaPrincipal = ({ usuario }) => {
       <div className="w-full max-w-md p-8 bg-yellow-100 rounded-lg shadow-lg">
         <div className="flex items-center mb-6 bg-teal-600 rounded-lg p-2">
           <img src={avatar} alt="Avatar" className="w-12 h-12 rounded-full mr-4" />
-          <h1 className="text-2xl font-bold text-white">Bienvenido, {nombreUsuario}</h1>
+          <h1 className="text-2xl font-bold text-white">Bienvenido, {displayName}</h1>
         </div>
         
         {error && (
@@ -167,20 +195,41 @@ const SalaPrincipal = ({ usuario }) => {
           <img src={candado4} alt="Candado 4" className="w-16 h-16" />
         </div>
 
-        <div className="flex justify-between items-center mt-5">
+        <div className="flex flex-col items-center mt-5 space-y-3 sm:items-stretch">
+          {/* Contenedor para Perfil e Instrucciones */}
+          <div className="flex space-x-3">
+            <button
+              onClick={() => navigate('/perfil')}
+              className="flex-1 bg-teal-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
+            >
+              Mi Perfil
+            </button>
+            <button
+              onClick={() => setShowInstructions(true)}
+              className="flex-1 bg-teal-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
+            >
+              Instrucciones
+            </button>
+          </div>
+
+          {/* Botón de Cerrar Sesión */}
           <button
             onClick={manejarCerrarSesion}
-            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition duration-300"
+            className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition duration-300"
           >
             Cerrar Sesión
           </button>
+        </div>
 
-          <button
-            onClick={() => setShowInstructions(true)}
-            className="bg-teal-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
-          >
-            Instrucciones
-          </button>
+        {/* Nueva Sección de Actualizaciones */}
+        <div className="mt-10 p-4 bg-white rounded-lg shadow-inner">
+        <h1 className="text-xl font-semibold text-gray-800">¡Novedades!</h1>
+          <ul className="mt-2 text-sm text-gray-700 list-disc list-inside space-y-1">
+            {ACTUALIZACIONES.map((actualizacion, index) => (
+              <li key={index}>{actualizacion}</li>
+            ))}
+          </ul>
+          <h2 className="font-semibold text-gray-800">Versión del Juego: {VERSION_JUEGO}</h2>
         </div>
       </div>
 

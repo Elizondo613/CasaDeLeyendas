@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import { auth } from '../firebaseConfig';
 import { 
   signInWithEmailAndPassword, 
@@ -30,6 +32,22 @@ const Login = () => {
     return () => unsubscribe();
   }, [navigate]);
 
+  // Creamos nuevo documento de usuario
+  const createUserDocument = async (user) => {
+    try {
+      const userRef = doc(db, 'usuarios', user.uid);
+      await setDoc(userRef, {
+        email: user.email,
+        displayName: user.email.split('@')[0], // Nombre por defecto
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      console.error("Error al crear documento de usuario:", error);
+      // No lanzamos el error para no interrumpir el flujo de registro
+    }
+  };
+
   const handleAuth = async (e) => {
     e.preventDefault();
     setError(null);
@@ -38,7 +56,10 @@ const Login = () => {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // Registro de nuevo usuario
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Crear documento en Firestore
+        await createUserDocument(userCredential.user);
       }
     } catch (error) {
       console.error("Error de autenticación:", error);
