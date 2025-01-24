@@ -96,22 +96,24 @@ const Perfil = ({ usuario }) => {
                 <div className="bg-white p-4 rounded-lg">
                     <h2 className="text-lg font-semibold mb-2">Nombre de usuario</h2>
                     {isEditing ? (
-                    <div className="flex space-x-2">
+                    <div className="flex items-center justify-between space-x-4 mt-4">
+                      <div className="flex-1">
                         <input
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        className="flex-1 p-2 border rounded-lg"
-                        placeholder="Ingresa tu nombre de usuario"
-                        maxLength={20}
+                          type="text"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                          placeholder="Ingresa tu nombre de usuario"
+                          maxLength={20}
                         />
-                        <button
+                      </div>
+                      <button
                         onClick={guardarNombre}
                         disabled={loading}
-                        className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition duration-300"
-                        >
+                        className="bg-teal-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 transition duration-300"
+                      >
                         Guardar
-                        </button>
+                      </button>
                     </div>
                     ) : (
                     <div className="flex justify-between items-center">

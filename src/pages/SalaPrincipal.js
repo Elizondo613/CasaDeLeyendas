@@ -169,19 +169,21 @@ const SalaPrincipal = ({ usuario }) => {
             Ser Maestro de Leyendas
           </button>
 
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              placeholder="Código de Sala"
-              value={codigoSala}
-              onChange={(e) => setCodigoSala(e.target.value)}
-              className="flex-1 p-3 border rounded-lg"
-              maxLength={6}
-            />
+          <div className="flex items-center justify-between space-x-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Código de Sala"
+                value={codigoSala}
+                onChange={(e) => setCodigoSala(e.target.value)}
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+                maxLength={6}
+              />
+            </div>
             <button
               onClick={manejarUnirseSala}
               disabled={cargando}
-              className="bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
+              className="bg-teal-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 transition duration-300"
             >
               Unirse
             </button>
