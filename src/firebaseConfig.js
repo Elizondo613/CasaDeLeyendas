@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -20,5 +20,17 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 // Inicializar Auth
 const auth = getAuth(app);
+
+// Habilitar persistencia en el navegador
+enableIndexedDbPersistence(db)
+  .catch((err) => {
+    if (err.code === 'failed-precondition') {
+      // Múltiples pestañas abiertas
+      console.warn('Persistencia de Firebase limitada');
+    } else if (err.code === 'unimplemented') {
+      // Navegador no soporta persistencia
+      console.warn('Navegador no soporta persistencia de Firebase');
+    }
+  });
 
 export { db, auth };

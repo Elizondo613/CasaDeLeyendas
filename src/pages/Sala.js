@@ -144,6 +144,31 @@ export default function Sala({ usuario }) {
     setNombresUsuarios(nombres);
   };
 
+  // LocalStorage
+  useEffect(() => {
+    // Intentar recuperar datos de localStorage al cargar
+    const salaGuardada = localStorage.getItem(`sala_${codigoSala}`);
+    if (salaGuardada) {
+      try {
+        const datosGuardados = JSON.parse(salaGuardada);
+        setSalaData(datosGuardados);
+      } catch (error) {
+        console.error('Error al recuperar datos de localStorage', error);
+      }
+    }
+  }, [codigoSala]);
+
+  // Guardar datos en localStorage cuando cambien
+  useEffect(() => {
+    if (salaData) {
+      try {
+        localStorage.setItem(`sala_${codigoSala}`, JSON.stringify(salaData));
+      } catch (error) {
+        console.error('Error al guardar datos en localStorage', error);
+      }
+    }
+  }, [salaData, codigoSala]);
+
   useEffect(() => {
     const salaRef = doc(db, 'salas', codigoSala);
     
@@ -256,7 +281,7 @@ export default function Sala({ usuario }) {
       
       // Modificar esta parte para asignar tiempo solo a los retos que lo necesitan
       const tiempoFinReto = ['trivia', 'riddle', 'mimica'].includes(tipoReto)
-      ? Timestamp.fromDate(new Date(Date.now() + 30000))  // Usar Timestamp de Firestore
+      ? Timestamp.fromDate(new Date(Date.now() + 40000))  // Usar Timestamp de Firestore
       : tipoReto === 'reto'
       ? Timestamp.fromDate(new Date(Date.now() + 10000))
       : null;
@@ -337,16 +362,16 @@ export default function Sala({ usuario }) {
       {salaData.jugadores?.map((jugador, index) => {
         // Determinar el ID del jugador
         const jugadorId = typeof jugador === 'string' ? jugador : jugador.id;
-  
+    
         // Obtener el nombre del jugador desde nombresUsuarios o un nombre genérico
         const nombreJugador = nombresUsuarios[jugadorId] || `Jugador ${jugadorId.slice(0, 10)}`;
-  
+    
         // Verificar si el jugador es el usuario actual
         const esUsuarioActual = jugadorId === usuario.uid;
-  
+    
         // Verificar si el jugador es el anfitrión
-        const esAnfitrion = jugadorId === salaData.anfitrion.id;
-  
+        const esAnfitrionJugador = jugadorId === salaData.anfitrion.id;
+    
         return (
           <li
             key={jugadorId}
@@ -356,21 +381,34 @@ export default function Sala({ usuario }) {
           >
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 flex items-center justify-center">
-                <img src={usuarioImages[index % usuarioImages.length]} alt={`Usuario ${index + 1}`} className="w-10 h-10" />
+                <img 
+                  src={usuarioImages[index % usuarioImages.length]} 
+                  alt={`Usuario ${index + 1}`} 
+                  className="w-10 h-10 object-cover rounded-full" 
+                />
               </div>
               <span className="text-xl font-medium text-gray-800">
                 {esUsuarioActual ? 'Tú' : nombreJugador}
-                {esAnfitrion && ' (Anfitrión)'}
+                {esAnfitrionJugador && ' (Anfitrión)'}
               </span>
             </div>
             <div className="flex items-center space-x-3 w-full sm:w-auto justify-end">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="w-8 sm:w-10 h-8 sm:h-10 flex items-center justify-center">
+                <div 
+                  key={i} 
+                  className="w-10 h-10 flex items-center justify-center"
+                >
                   {i < (puntos[jugadorId] || 0) && (
-                    <img src={llaveImages[i]} alt={`Llave ${i + 1}`} className="w-6 sm:w-8 h-6 sm:h-8" />
+                    <img 
+                      src={llaveImages[i]} 
+                      alt={`Llave ${i + 1}`} 
+                      className="w-full h-full object-contain max-w-[40px] max-h-[40px]" 
+                    />
                   )}
                 </div>
               ))}
+              
+              {/* Solo muestra los botones si el usuario actual es el anfitrión */}
               {esAnfitrion && (
                 <div className="flex space-x-2">
                   <button
@@ -432,6 +470,16 @@ export default function Sala({ usuario }) {
               {/* Contenido superpuesto */}
               <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-8">
                 {/* Íconos superiores */}
+                {/* Barra de tiempo con iconos */}
+                <div className="bg-orange-100 rounded-lg p-3 md:p-4 mb-4 flex justify-center items-center space-x-4">
+                  <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
+                  <GameTimer 
+                    tiempoFinReto={salaData.tiempoFinReto}
+                    onTimeUp={finalizarReto}
+                  />
+                  <img src={logoLeyendas} alt="Logo Leyendas" className="w-6 h-6 md:w-8 md:h-8" />
+                </div>
+
                 <div className="flex justify-between w-full max-w-lg mb-4 md:mb-6">
                   <img src={candelaIcon} alt="Candela" className="w-6 h-6 md:w-8 md:h-8" />
                   <img src={relojIcon} alt="Reloj" className="w-6 h-6 md:w-8 md:h-8" />
@@ -867,7 +915,7 @@ export default function Sala({ usuario }) {
           </button>
         )}
 
-        {puedeEscanear && !estaJugando && (
+        {puedeEscanear && !estaJugando && !mostrarScanner && (
           <button 
             onClick={() => setMostrarScanner(true)}
             className="w-full bg-[#2F4F4F] text-white py-3 px-6 rounded-lg hover:bg-[#1e3333] text-xl font-semibold mb-4 transition-colors"
