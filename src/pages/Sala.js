@@ -12,11 +12,6 @@ import llave2 from '../assets/Llave2.png';
 import llave3 from '../assets/Llave3.png';
 import llave4 from '../assets/Llave4.png';
 import usuario1 from '../assets/Usuario1.png';
-import usuario2 from '../assets/Usuario2.png';
-import usuario3 from '../assets/Usuario3.png';
-import usuario4 from '../assets/Usuario4.png';
-import usuario5 from '../assets/Usuario5.png';
-import usuario6 from '../assets/Usuario6.png';
 import marcoHeader from '../assets/Marco_Sala.png';
 import relojIcon from '../assets/relojIcon.png';
 import fondoMimica from '../assets/fondoMimica.png';
@@ -33,7 +28,6 @@ import tiktokIcon from '../assets/tiktokIcon.png';
 const API_BASE_URL = 'https://api-casal.onrender.com/api';
 
 const llaveImages = [llave1, llave2, llave3, llave4];
-const usuarioImages = [usuario1, usuario2, usuario3, usuario4, usuario5, usuario6];
 
 export default function Sala({ usuario }) {
   const { codigoSala } = useParams();
@@ -49,7 +43,8 @@ export default function Sala({ usuario }) {
   const [retoTexto, setRetoTexto] = useState(null);
   const [escanerListo, setEscanerListo] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [nombresUsuarios, setNombresUsuarios] = useState({})
+  const [nombresUsuarios, setNombresUsuarios] = useState({});
+  const [avataresUsuarios, setAvataresUsuarios] = useState({});
 
   // Salir de la sala
   const handleSalirSala = async () => {
@@ -240,6 +235,36 @@ export default function Sala({ usuario }) {
     };
   }, [codigoSala, usuario.uid, navigate, puntos]);
 
+    // Efecto para cargar los avatares de los usuarios
+    useEffect(() => {
+      const cargarAvatares = async () => {
+        const avatares = {};
+        for (const jugador of salaData.jugadores) {
+          const jugadorId = typeof jugador === 'string' ? jugador : jugador.id;
+          try {
+            const userDoc = await getDoc(doc(db, 'usuarios', jugadorId));
+            if (userDoc.exists()) {
+              // Si existe un avatar personalizado, usarlo
+              const userData = userDoc.data();
+              avatares[jugadorId] = userData.avatar || usuario1;
+            } else {
+              // Fallback al avatar predeterminado
+              avatares[jugadorId] = usuario1;
+            }
+          } catch (error) {
+            console.error(`Error al cargar avatar para ${jugadorId}:`, error);
+            avatares[jugadorId] = usuario1;
+          }
+        }
+        setAvataresUsuarios(avatares);
+      };
+  
+      // Solo ejecutar si hay jugadores en la sala
+      if (salaData?.jugadores?.length) {
+        cargarAvatares();
+      }
+    }, [salaData?.jugadores]);
+
   //Inicio de juego
   const iniciarJuego = async () => {
     if (!esAnfitrion) {
@@ -371,6 +396,9 @@ export default function Sala({ usuario }) {
     
         // Verificar si el jugador es el anfitrión
         const esAnfitrionJugador = jugadorId === salaData.anfitrion.id;
+
+        // Obtener el avatar del jugador, con fallback a usuario1
+        const avatarJugador = avataresUsuarios[jugadorId] || usuario1;
     
         return (
           <li
@@ -382,8 +410,8 @@ export default function Sala({ usuario }) {
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 flex items-center justify-center">
                 <img 
-                  src={usuarioImages[index % usuarioImages.length]} 
-                  alt={`Usuario ${index + 1}`} 
+                  src={avatarJugador} 
+                  alt={`Avatar de ${nombreJugador}`} 
                   className="w-10 h-10 object-cover rounded-full" 
                 />
               </div>

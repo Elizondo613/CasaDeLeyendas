@@ -9,7 +9,7 @@ import candado1 from '../assets/Candado1.png';
 import candado2 from '../assets/Candado2.png';
 import candado3 from '../assets/Candado3.png';
 import candado4 from '../assets/Candado4.png';
-import avatar from '../assets/Usuario1.png';
+import defaultAvatar from '../assets/Usuario1.png';
 
 const SalaPrincipal = ({ usuario }) => {
   const [showInstructions, setShowInstructions] = useState(false);
@@ -17,34 +17,43 @@ const SalaPrincipal = ({ usuario }) => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
   const [displayName, setDisplayName] = useState('');
+  const [userAvatar, setUserAvatar] = useState(defaultAvatar);
   const navigate = useNavigate();
 
-  const VERSION_JUEGO = '1.0.0';
+  const VERSION_JUEGO = '1.1.0';
   const ACTUALIZACIONES = [
     'Ahora puedes cambiar tu nombre en la nueva sección de perfil y que todos lo vean!',
-    'En cada actualización iremos implementando mejoras para que tengas una mejor experiencia de juego!'
+    'Puedes seleccionar tu icono de perfil para que vaya acorde a tu ficha en el tablero!',
+    'En cada actualización iremos implementando mejoras para que tengas una buena experiencia de juego!'
   ]
 
   //const nombreUsuario = usuario.email.split('@')[0];
 
     // Cargar el nombre de usuario
     useEffect(() => {
-      const cargarNombreUsuario = async () => {
+      const cargarInfoUsuario = async () => {
         try {
           const userDoc = await getDoc(doc(db, 'usuarios', usuario.uid));
-          if (userDoc.exists() && userDoc.data().displayName) {
-            setDisplayName(userDoc.data().displayName);
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            // Establecer nombre de usuario
+            setDisplayName(userData.displayName || usuario.email.split('@')[0]);
+            
+            // Establecer avatar (usar predeterminado si no hay avatar)
+            setUserAvatar(userData.avatar || defaultAvatar);
           } else {
-            // Usar el email como fallback
+            // Fallback si no existe el documento
             setDisplayName(usuario.email.split('@')[0]);
+            setUserAvatar(defaultAvatar);
           }
         } catch (error) {
-          console.error('Error al cargar el nombre de usuario:', error);
+          console.error('Error al cargar información de usuario:', error);
           setDisplayName(usuario.email.split('@')[0]);
+          setUserAvatar(defaultAvatar);
         }
       };
   
-      cargarNombreUsuario();
+      cargarInfoUsuario();
     }, [usuario]);
 
     // Cerramos sesión
@@ -150,7 +159,7 @@ const SalaPrincipal = ({ usuario }) => {
 <div className="flex items-center justify-center min-h-screen bg-yellow-700">
       <div className="w-full max-w-md p-8 bg-yellow-100 rounded-lg shadow-lg">
         <div className="flex items-center mb-6 bg-teal-600 rounded-lg p-2">
-          <img src={avatar} alt="Avatar" className="w-12 h-12 rounded-full mr-4" />
+          <img src={userAvatar} alt="Avatar" className="w-12 h-12 rounded-full mr-4" />
           <h1 className="text-2xl font-bold text-white">Bienvenido, {displayName}</h1>
         </div>
         
