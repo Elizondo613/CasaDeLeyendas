@@ -306,9 +306,9 @@ export default function Sala({ usuario }) {
       
       // Modificar esta parte para asignar tiempo solo a los retos que lo necesitan
       const tiempoFinReto = ['trivia', 'riddle', 'mimica'].includes(tipoReto)
-      ? Timestamp.fromDate(new Date(Date.now() + 40000))  // Usar Timestamp de Firestore
+      ? Timestamp.fromDate(new Date(Date.now() + 60000))  // Usar Timestamp de Firestore
       : tipoReto === 'reto'
-      ? Timestamp.fromDate(new Date(Date.now() + 10000))
+      ? Timestamp.fromDate(new Date(Date.now() + 60000))
       : null;
       
       await updateDoc(salaRef, {
