@@ -12,7 +12,6 @@ import candado4 from '../assets/Candado4.png';
 import defaultAvatar from '../assets/Usuario1.png';
 
 const SalaPrincipal = ({ usuario }) => {
-  const [showInstructions, setShowInstructions] = useState(false);
   const [codigoSala, setCodigoSala] = useState('');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState(null);
@@ -20,6 +19,7 @@ const SalaPrincipal = ({ usuario }) => {
   const [userAvatar, setUserAvatar] = useState(defaultAvatar);
   const navigate = useNavigate();
 
+  const instructionsUrl = "https://mc.lluviadeideaseditorial.com/reglascasaleyendas/";
   const VERSION_JUEGO = '1.1.0';
   const ACTUALIZACIONES = [
     'Ahora puedes cambiar tu nombre en la nueva sección de perfil y que todos lo vean!',
@@ -216,7 +216,7 @@ const SalaPrincipal = ({ usuario }) => {
               Mi Perfil
             </button>
             <button
-              onClick={() => setShowInstructions(true)}
+              onClick={() => window.location.href = instructionsUrl}
               className="flex-1 bg-teal-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
             >
               Instrucciones
@@ -244,34 +244,6 @@ const SalaPrincipal = ({ usuario }) => {
         </div>
       </div>
 
-      {/* Modal de Instrucciones */}
-      {showInstructions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full">
-            <h2 className="text-2xl font-bold mb-4">Instrucciones del Juego</h2>
-            
-            <div className="space-y-4 mb-6">
-              <p>¡Bienvenido a Leyendas! Aquí están las instrucciones básicas:</p>
-              
-              <ul className="list-disc pl-6 space-y-2">
-                <li>Como Maestro de Leyendas, podrás crear una sala y compartir el código con otros jugadores.</li>
-                <li>Los jugadores pueden unirse usando el código de sala proporcionado.</li>
-                <li>Cada candado representa una puerta que debes abrir para asegurar tu victoria.</li>
-                <li>Deberás resolver acertijos y superar desafíos para avanzar.</li>
-              </ul>
-              
-              <p>¡Prepárate para una aventura llena de misterios y diversión!</p>
-            </div>
-
-            <button
-              onClick={() => setShowInstructions(false)}
-              className="w-full bg-teal-600 text-white py-2 rounded-lg font-semibold hover:bg-teal-700 transition duration-300"
-            >
-              ¡Entendido!
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
