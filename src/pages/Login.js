@@ -75,7 +75,7 @@ const Login = () => {
     }
     try {
       await sendPasswordResetEmail(auth, email);
-      setSuccessMessage("Se ha enviado un correo de recuperación. Por favor revisa tu bandeja de entrada.");
+      setSuccessMessage("Se ha enviado un correo de recuperación. Por favor revisa tu bandeja de entrada o de SPAM.");
       setError(null);
       setShowResetPassword(false);
     } catch (error) {
